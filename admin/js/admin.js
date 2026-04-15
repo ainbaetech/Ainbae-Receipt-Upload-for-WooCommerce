@@ -1,8 +1,7 @@
 jQuery(document).ready(function ($) {
-  // ── Colour pickers ──────────────────────────────────────────────────
+  // Colour pickers
   $(".ainbae-bacs-color-picker").wpColorPicker({
     change: function (e, ui) {
-      // Update the input value immediately so the preview can catch it
       $(e.target).val(ui.color.toString());
       schedulePreview();
     },
@@ -11,7 +10,7 @@ jQuery(document).ready(function ($) {
     },
   });
 
-  // ── WhatsApp toggle ─────────────────────────────────────────────────
+  // WhatsApp toggle
   $('input[name="whatsapp_enabled"]').on("change", function () {
     var row = $("#ainbae-bacs-wa-number-row");
     if (this.checked) {
@@ -22,7 +21,7 @@ jQuery(document).ready(function ($) {
     schedulePreview();
   });
 
-  // ── Border radius slider synchronization ────────────────────────────
+  // Border radius slider
   $("#ainbae_bacs_br_range").on("input", function () {
     $("#card_border_radius").val(this.value);
     schedulePreview();
@@ -32,10 +31,10 @@ jQuery(document).ready(function ($) {
     schedulePreview();
   });
 
-  // ── Label fields ────────────────────────────────────────────────────
+  // Label fields
   $('[name^="label_"]').on("input", schedulePreview);
 
-  // ── Preview ─────────────────────────────────────────────────────────
+  // Preview Logic
   var previewTimer;
   function schedulePreview() {
     clearTimeout(previewTimer);
@@ -92,8 +91,7 @@ jQuery(document).ready(function ($) {
       '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 6px;"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>' +
       '<div style="font-size:12px;color:#555;">' +
       h(g("label_dropzone")) +
-      "</div>" +
-      "</div>" +
+      "</div></div>" +
       '<div style="padding:10px;border-radius:6px;text-align:center;background:linear-gradient(90deg,' +
       g("color_upload_btn_from") +
       "," +
@@ -110,8 +108,6 @@ jQuery(document).ready(function ($) {
       "</p>";
 
     if (wa) {
-      // Note: "OR" string is hardcoded in the JS preview, but standard practice in isolated JS previews
-      // for non-critical admin UI is usually fine.
       html +=
         '<div style="display:flex;align-items:center;gap:8px;margin:10px 0;">' +
         '<div style="flex:1;border-bottom:1px solid ' +
@@ -122,8 +118,7 @@ jQuery(document).ready(function ($) {
         ';font-size:11px;">OR</span>' +
         '<div style="flex:1;border-bottom:1px solid ' +
         g("color_or_line") +
-        '"></div>' +
-        "</div>" +
+        '"></div></div>' +
         '<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-radius:6px;background:' +
         g("color_wa_btn_bg") +
         ";border:1.5px solid " +
@@ -140,6 +135,5 @@ jQuery(document).ready(function ($) {
     container.innerHTML = html;
   }
 
-  // Initial render after pickers initialise
   setTimeout(buildPreview, 300);
 });

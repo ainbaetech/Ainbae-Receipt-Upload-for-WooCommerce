@@ -9,12 +9,14 @@
  * License: GPL2+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: ainbae-receipt-upload
+ * WC tested up to: 10.7.0
+ * Requires Plugins: woocommerce
  */
 
-// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
 // Check if WooCommerce is active
 add_action('plugins_loaded', function() {
     if ( ! class_exists('WooCommerce') ) {
@@ -24,6 +26,15 @@ add_action('plugins_loaded', function() {
             . '</p></div>';
         });
         return;
+    }
+});
+add_action( 'before_woocommerce_init', function() {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+            'custom_order_tables',
+            __FILE__,
+            true
+        );
     }
 });
 
@@ -40,57 +51,36 @@ define( 'AINBAE_BACS_OPTION_KEY',        'ainbae_bacs_receipt_settings' );
 // SETTINGS HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Default settings. Every key here is the canonical key stored in the DB.
- */
 function ainbae_bacs_default_settings() {
     return array(
-        // WhatsApp
         'whatsapp_enabled'       => '1',
         'whatsapp_number'        => '1234567890',
-
-        // Colours — Card
         'color_card_bg'          => '#f0f4f2',
         'color_card_border'      => '#d6e4dc',
-
-        // Colours — Drop zone
         'color_dropzone_bg'      => '#ffffff',
         'color_dropzone_border'  => '#b0c8bc',
         'color_icon'             => '#0aa7ff',
-
-        // Colours — Upload button
         'color_upload_btn_from'  => '#0aa7ff',
         'color_upload_btn_to'    => '#0aa7ff',
         'color_upload_btn_text'  => '#ffffff',
-
-        // Colours — WhatsApp button
         'color_wa_btn_bg'        => '#e6f9ee',
         'color_wa_btn_border'    => '#a8dfc0',
         'color_wa_btn_text'      => '#1a7a3c',
-
-        // Colours — Typography
         'color_heading'          => '#1a1a1a',
         'color_subtitle'         => '#555555',
         'color_hint'             => '#888888',
-
-        // Colours — OR divider
         'color_or_line'          => '#d0ddd6',
         'color_or_text'          => '#999999',
-
-        // Text / Labels
         'label_heading'          => __( 'Verify Your Payment', 'ainbae-receipt-upload' ),
         'label_subtitle'         => __( 'Please upload a screenshot of your transaction receipt, or send it directly via WhatsApp to process your order.', 'ainbae-receipt-upload' ),
         'label_dropzone'         => __( 'Click to upload, or drag and drop your receipt file', 'ainbae-receipt-upload' ),
         'label_upload_btn'       => __( 'Upload Receipt', 'ainbae-receipt-upload' ),
         'label_wa_btn'           => __( 'Send Receipt via WhatsApp', 'ainbae-receipt-upload' ),
         'label_hint'             => __( 'Allowed formats: JPG, PNG, PDF. Max size: 5 MB.', 'ainbae-receipt-upload' ),
-
-        // Layout
         'card_border_radius'     => '16',
     );
 }
 
-/** Get one setting value, falling back to default. */
 function ainbae_bacs_setting( $key ) {
     $defaults = ainbae_bacs_default_settings();
     $saved    = get_option( AINBAE_BACS_OPTION_KEY, array() );
@@ -98,106 +88,71 @@ function ainbae_bacs_setting( $key ) {
     return $all[ $key ] ?? ( $defaults[ $key ] ?? '' );
 }
 
-/** WhatsApp number — respects wp-config constant for backward compat. */
 function ainbae_bacs_get_whatsapp_number() {
     $number = defined( 'BACS_WHATSAPP_NUMBER' ) ? BACS_WHATSAPP_NUMBER : ainbae_bacs_setting( 'whatsapp_number' );
     return apply_filters( 'ainbae_bacs_receipt_whatsapp_number', $number );
 }
 
-// Load text domain for translations
 add_action('plugins_loaded', function() {
-    load_plugin_textdomain(
-        'ainbae-receipt-upload',
-        false,
-        dirname(plugin_basename(__FILE__)) . '/languages'
-    );
+    load_plugin_textdomain('ainbae-receipt-upload', false, dirname(plugin_basename(__FILE__)) . '/languages');
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — MENU
+// ADMIN — MENU & SAVE
 // ─────────────────────────────────────────────────────────────────────────────
 
 add_action( 'admin_menu', 'ainbae_bacs_register_menu' );
-
 function ainbae_bacs_register_menu() {
-    add_submenu_page(
-        'woocommerce',
-        __( 'Ainbae Receipt Upload Settings', 'ainbae-receipt-upload' ),
-        __( 'Upload Receipt', 'ainbae-receipt-upload' ),
-        'manage_woocommerce',
-        'ainbae-receipt-settings',
-        'ainbae_bacs_render_settings_page'
-    );
+    add_submenu_page('woocommerce', __( 'Ainbae Receipt Upload Settings', 'ainbae-receipt-upload' ), __( 'Upload Receipt', 'ainbae-receipt-upload' ), 'manage_woocommerce', 'ainbae-receipt-settings', 'ainbae_bacs_render_settings_page');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — SAVE SETTINGS
-// ─────────────────────────────────────────────────────────────────────────────
-
 add_action( 'admin_init', 'ainbae_bacs_save_settings' );
-
 function ainbae_bacs_save_settings() {
-    if (
-        ! isset( $_POST['ainbae_bacs_settings_nonce'] )
-        || ! wp_verify_nonce( $_POST['ainbae_bacs_settings_nonce'], 'ainbae_bacs_save_settings_action' )
-        || ! current_user_can( 'manage_woocommerce' )
-        || ! isset( $_POST['ainbae_bacs_save_settings'] )
-    ) {
+    if ( ! isset( $_POST['ainbae_bacs_settings_nonce'] ) || ! wp_verify_nonce( $_POST['ainbae_bacs_settings_nonce'], 'ainbae_bacs_save_settings_action' ) || ! current_user_can( 'manage_woocommerce' ) || ! isset( $_POST['ainbae_bacs_save_settings'] ) ) {
         return;
     }
 
     $defaults  = ainbae_bacs_default_settings();
     $sanitized = array();
 
-    // Colour fields
-    $colour_keys = array(
-        'color_card_bg', 'color_card_border',
-        'color_dropzone_bg', 'color_dropzone_border', 'color_icon',
-        'color_upload_btn_from', 'color_upload_btn_to', 'color_upload_btn_text',
-        'color_wa_btn_bg', 'color_wa_btn_border', 'color_wa_btn_text',
-        'color_heading', 'color_subtitle', 'color_hint',
-        'color_or_line', 'color_or_text',
-    );
+    $colour_keys = array('color_card_bg', 'color_card_border', 'color_dropzone_bg', 'color_dropzone_border', 'color_icon', 'color_upload_btn_from', 'color_upload_btn_to', 'color_upload_btn_text', 'color_wa_btn_bg', 'color_wa_btn_border', 'color_wa_btn_text', 'color_heading', 'color_subtitle', 'color_hint', 'color_or_line', 'color_or_text');
     foreach ( $colour_keys as $key ) {
         $val = isset( $_POST[ $key ] ) ? sanitize_hex_color( wp_unslash( $_POST[ $key ] ) ) : '';
         $sanitized[ $key ] = $val ?: $defaults[ $key ];
     }
 
-    // Text labels
     foreach ( array( 'label_heading', 'label_subtitle', 'label_dropzone', 'label_upload_btn', 'label_wa_btn', 'label_hint' ) as $key ) {
         $sanitized[ $key ] = isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : $defaults[ $key ];
     }
 
-    // WhatsApp
     $sanitized['whatsapp_enabled'] = isset( $_POST['whatsapp_enabled'] ) ? '1' : '0';
-    $sanitized['whatsapp_number']  = isset( $_POST['whatsapp_number'] )
-        ? preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['whatsapp_number'] ) )
-        : $defaults['whatsapp_number'];
-
-    // Border radius
+    $sanitized['whatsapp_number']  = isset( $_POST['whatsapp_number'] ) ? preg_replace( '/[^0-9]/', '', wp_unslash( $_POST['whatsapp_number'] ) ) : $defaults['whatsapp_number'];
     $sanitized['card_border_radius'] = isset( $_POST['card_border_radius'] ) ? absint( $_POST['card_border_radius'] ) : $defaults['card_border_radius'];
 
     update_option( AINBAE_BACS_OPTION_KEY, $sanitized );
-
     wp_safe_redirect( add_query_arg( array( 'page' => 'ainbae-receipt-settings', 'updated' => '1' ), admin_url( 'admin.php' ) ) );
     exit;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN — ENQUEUE COLOUR PICKER & ASSETS
+// ENQUEUE ASSETS
 // ─────────────────────────────────────────────────────────────────────────────
 
 add_action( 'admin_enqueue_scripts', 'ainbae_bacs_enqueue_admin_assets' );
-
 function ainbae_bacs_enqueue_admin_assets( $hook ) {
     if ( isset( $_GET['page'] ) && $_GET['page'] === 'ainbae-receipt-settings' ) {
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
-        
-        // Enqueue our custom CSS and JS
-        wp_enqueue_style( 'ainbae-bacs-admin-css', plugins_url( 'assets/css/admin.css', __FILE__ ), array(), '2.1.8' );
-        wp_enqueue_script( 'ainbae-bacs-admin-js', plugins_url( 'assets/js/admin.js', __FILE__ ), array( 'jquery', 'wp-color-picker' ), '2.1.8', true );
+        wp_enqueue_style( 'ainbae-bacs-admin-css', plugins_url( 'admin/css/admin.css', __FILE__ ), array(), '2.2.0' );
+        wp_enqueue_script( 'ainbae-bacs-admin-js', plugins_url( 'admin/js/admin.js', __FILE__ ), array( 'jquery', 'wp-color-picker' ), '2.2.0', true );
+    }
+}
+
+add_action( 'wp_enqueue_scripts', 'ainbae_bacs_enqueue_public_assets' );
+function ainbae_bacs_enqueue_public_assets() {
+    if ( function_exists('is_wc_endpoint_url') && ( is_wc_endpoint_url('view-order') || is_wc_endpoint_url('order-received') ) ) {
+        wp_enqueue_style( 'ainbae-bacs-public-css', plugins_url( 'public/css/public.css', __FILE__ ), array(), '2.2.0' );
+        wp_enqueue_script( 'ainbae-bacs-public-js', plugins_url( 'public/js/public.js', __FILE__ ), array(), '2.2.0', true );
     }
 }
 
@@ -206,20 +161,17 @@ function ainbae_bacs_enqueue_admin_assets( $hook ) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ainbae_bacs_render_settings_page() {
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_die( esc_html__( 'Access denied.', 'ainbae-receipt-upload' ) );
-    }
+    if ( ! current_user_can( 'manage_woocommerce' ) ) wp_die( esc_html__( 'Access denied.', 'ainbae-receipt-upload' ) );
 
-    // Load all settings into $s shorthand.
     $s = array();
     foreach ( array_keys( ainbae_bacs_default_settings() ) as $key ) {
         $s[ $key ] = ainbae_bacs_setting( $key );
     }
     ?>
     <div class="wrap" id="ainbae-bacs-settings-wrap">
-    <div style="margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e0e0e0;">
-        <img src="<?php echo esc_url( plugins_url( 'assets/images/ainbae-logo.png', __FILE__ ) ); ?>" alt="<?php esc_attr_e( 'Ainbae Logo', 'ainbae-receipt-upload' ); ?>" style="height:60px; width:auto; object-fit:contain;" onerror="this.style.display='none';">
-            <p style="margin:0;color:#666;font-size:13px;"><?php esc_html_e( 'Customise the payment receipt widget shown to customers', 'ainbae-receipt-upload' ); ?></p>
+    <div class="ainbae-bacs-page-header">
+        <img src="<?php echo esc_url( plugins_url( 'admin/images/ainbae-logo.png', __FILE__ ) ); ?>" alt="<?php esc_attr_e( 'Ainbae Logo', 'ainbae-receipt-upload' ); ?>" onerror="this.style.display='none';">
+        <p><?php esc_html_e( 'Customise the payment receipt widget shown to customers', 'ainbae-receipt-upload' ); ?></p>
     </div>
 
     <?php if ( isset( $_GET['updated'] ) ) : ?>
@@ -231,10 +183,8 @@ function ainbae_bacs_render_settings_page() {
     <form method="post" action="">
         <?php wp_nonce_field( 'ainbae_bacs_save_settings_action', 'ainbae_bacs_settings_nonce' ); ?>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:1100px;align-items:start;">
-
-            <div style="display:flex;flex-direction:column;gap:22px;">
-
+        <div class="ainbae-bacs-grid">
+            <div class="ainbae-bacs-col">
                 <div class="ainbae-bacs-card">
                     <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#dcfce7,#bbf7d040);">
                         <svg fill="#25d366" width="17" height="17" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z"/><path d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z"/></svg>
@@ -254,11 +204,9 @@ function ainbae_bacs_render_settings_page() {
                         <div class="ainbae-bacs-field" id="ainbae-bacs-wa-number-row" <?php echo $s['whatsapp_enabled'] !== '1' ? 'style="opacity:.4;pointer-events:none;"' : ''; ?>>
                             <label class="ainbae-bacs-label" for="whatsapp_number"><?php esc_html_e( 'WhatsApp Number', 'ainbae-receipt-upload' ); ?></label>
                             <p class="ainbae-bacs-desc"><?php esc_html_e( 'Include country code, digits only (e.g. 1234567890)', 'ainbae-receipt-upload' ); ?></p>
-                            <div style="position:relative;">
-                                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#888;font-size:14px;">+</span>
-                                <input type="text" id="whatsapp_number" name="whatsapp_number"
-                                       value="<?php echo esc_attr( $s['whatsapp_number'] ); ?>"
-                                       placeholder="1234567890" class="ainbae-bacs-input" style="padding-left:22px;">
+                            <div class="ainbae-bacs-input-prefix">
+                                <span>+</span>
+                                <input type="text" id="whatsapp_number" name="whatsapp_number" value="<?php echo esc_attr( $s['whatsapp_number'] ); ?>" placeholder="1234567890" class="ainbae-bacs-input">
                             </div>
                         </div>
                     </div>
@@ -284,8 +232,7 @@ function ainbae_bacs_render_settings_page() {
                         <div class="ainbae-bacs-field">
                             <label class="ainbae-bacs-label" for="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $title ); ?></label>
                             <p class="ainbae-bacs-desc"><?php echo esc_html( $desc ); ?></p>
-                            <input type="text" id="<?php echo esc_attr( $key ); ?>" name="<?php echo esc_attr( $key ); ?>"
-                                   value="<?php echo esc_attr( $s[ $key ] ); ?>" class="ainbae-bacs-input">
+                            <input type="text" id="<?php echo esc_attr( $key ); ?>" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $s[ $key ] ); ?>" class="ainbae-bacs-input">
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -297,23 +244,20 @@ function ainbae_bacs_render_settings_page() {
                         <span><?php esc_html_e( 'Layout', 'ainbae-receipt-upload' ); ?></span>
                     </div>
                     <div class="ainbae-bacs-card-body">
-                        <div class="ainbae-bacs-field-range">
+                        <div class="ainbae-bacs-field">
                             <label class="ainbae-bacs-label" for="card_border_radius"><?php esc_html_e( 'Card Corner Radius (px)', 'ainbae-receipt-upload' ); ?></label>
                             <p class="ainbae-bacs-desc"><?php esc_html_e( 'Roundness of the outer card corners (0 = square, 40 = pill)', 'ainbae-receipt-upload' ); ?></p>
                             <div class="ainbae-bacs-range-row">
-                                <input type="range" id="ainbae_bacs_br_range" min="0" max="40"
-                                       value="<?php echo esc_attr( $s['card_border_radius'] ); ?>"
-                                       class="ainbae-bacs-range-slider">
-                                <input type="number" id="card_border_radius" name="card_border_radius"
-                                       min="0" max="40"
-                                       value="<?php echo esc_attr( $s['card_border_radius'] ); ?>"
-                                       class="ainbae-bacs-input ainbae-bacs-range-input">
+                                <input type="range" id="ainbae_bacs_br_range" min="0" max="40" value="<?php echo esc_attr( $s['card_border_radius'] ); ?>" class="ainbae-bacs-range-slider">
+                                <input type="number" id="card_border_radius" name="card_border_radius" min="0" max="40" value="<?php echo esc_attr( $s['card_border_radius'] ); ?>" class="ainbae-bacs-input ainbae-bacs-range-input">
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </div><div style="display:flex;flex-direction:column;gap:22px;">
+            </div>
+            
+            <div class="ainbae-bacs-col">
 
                 <div class="ainbae-bacs-card">
                     <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce740);">
@@ -332,60 +276,55 @@ function ainbae_bacs_render_settings_page() {
                         <span><?php esc_html_e( 'Colours', 'ainbae-receipt-upload' ); ?></span>
                     </div>
                     <div class="ainbae-bacs-card-body">
-
                         <p class="ainbae-bacs-section-title"><?php esc_html_e( 'Card', 'ainbae-receipt-upload' ); ?></p>
-                        <?php ainbae_bacs_colour_field( 'color_card_bg',    __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_card_border', __( 'Border', 'ainbae-receipt-upload' ),    $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_card_bg', __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_card_border', __( 'Border', 'ainbae-receipt-upload' ), $s ); ?>
 
                         <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e( 'Drop Zone', 'ainbae-receipt-upload' ); ?></p>
-                        <?php ainbae_bacs_colour_field( 'color_dropzone_bg',     __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_dropzone_border', __( 'Border', 'ainbae-receipt-upload' ),     $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_icon',            __( 'Icon', 'ainbae-receipt-upload' ),       $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_dropzone_bg', __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_dropzone_border', __( 'Border', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_icon', __( 'Icon', 'ainbae-receipt-upload' ), $s ); ?>
 
                         <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e( 'Upload Button', 'ainbae-receipt-upload' ); ?></p>
                         <?php ainbae_bacs_colour_field( 'color_upload_btn_from', __( 'Gradient Start', 'ainbae-receipt-upload' ), $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_upload_btn_to',   __( 'Gradient End', 'ainbae-receipt-upload' ),   $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_upload_btn_text', __( 'Text', 'ainbae-receipt-upload' ),           $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_upload_btn_to', __( 'Gradient End', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_upload_btn_text', __( 'Text', 'ainbae-receipt-upload' ), $s ); ?>
 
                         <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e( 'WhatsApp Button', 'ainbae-receipt-upload' ); ?></p>
-                        <?php ainbae_bacs_colour_field( 'color_wa_btn_bg',    __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_wa_btn_border',__( 'Border', 'ainbae-receipt-upload' ),     $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_wa_btn_text',  __( 'Text', 'ainbae-receipt-upload' ),       $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_wa_btn_bg', __( 'Background', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_wa_btn_border',__( 'Border', 'ainbae-receipt-upload' ), $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_wa_btn_text', __( 'Text', 'ainbae-receipt-upload' ), $s ); ?>
 
                         <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e( 'Typography', 'ainbae-receipt-upload' ); ?></p>
-                        <?php ainbae_bacs_colour_field( 'color_heading',  __( 'Heading', 'ainbae-receipt-upload' ),  $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_heading', __( 'Heading', 'ainbae-receipt-upload' ), $s ); ?>
                         <?php ainbae_bacs_colour_field( 'color_subtitle', __( 'Subtitle', 'ainbae-receipt-upload' ), $s ); ?>
-                        <?php ainbae_bacs_colour_field( 'color_hint',     __( 'Hint', 'ainbae-receipt-upload' ),     $s ); ?>
+                        <?php ainbae_bacs_colour_field( 'color_hint', __( 'Hint', 'ainbae-receipt-upload' ), $s ); ?>
 
                         <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e( 'OR Divider', 'ainbae-receipt-upload' ); ?></p>
                         <?php ainbae_bacs_colour_field( 'color_or_line', __( 'Line', 'ainbae-receipt-upload' ), $s ); ?>
                         <?php ainbae_bacs_colour_field( 'color_or_text', __( 'Text', 'ainbae-receipt-upload' ), $s ); ?>
-
                     </div>
                 </div>
-            </div></div><div style="position:sticky;bottom:0;z-index:100;margin-top:24px;max-width:1100px;padding:14px 20px;background:#fff;border-top:1px solid #e5e7eb;box-shadow:0 -3px 14px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0;">
-            <span style="font-size:13px;color:#777;"><?php esc_html_e( 'Changes apply to all customers immediately after saving.', 'ainbae-receipt-upload' ); ?></span>
-            <button type="submit" name="ainbae_bacs_save_settings" style="background:linear-gradient(135deg,#0aa7ff,#0066ff);color:#fff;border:none;border-radius:8px;padding:10px 30px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,.4);transition:opacity .2s;">
+            </div>
+        </div>
+        
+        <div class="ainbae-bacs-sticky-footer">
+            <span><?php esc_html_e( 'Changes apply to all customers immediately after saving.', 'ainbae-receipt-upload' ); ?></span>
+            <button type="submit" name="ainbae_bacs_save_settings" class="ainbae-bacs-save-btn">
                 <?php esc_html_e( 'Save Settings', 'ainbae-receipt-upload' ); ?>
             </button>
         </div>
-
     </form>
     </div>
     <?php
 }
 
-/** Helper: render one colour picker row. */
 function ainbae_bacs_colour_field( $key, $label, $s ) {
     ?>
     <div class="ainbae-bacs-colour-row">
         <span class="ainbae-bacs-colour-label"><?php echo esc_html( $label ); ?></span>
         <div class="ainbae-bacs-colour-right">
-            <input type="text"
-                   name="<?php echo esc_attr( $key ); ?>"
-                   value="<?php echo esc_attr( $s[ $key ] ); ?>"
-                   class="ainbae-bacs-color-picker"
-                   data-default-color="<?php echo esc_attr( $s[ $key ] ); ?>">
+            <input type="text" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $s[ $key ] ); ?>" class="ainbae-bacs-color-picker" data-default-color="<?php echo esc_attr( $s[ $key ] ); ?>">
         </div>
     </div>
     <?php
@@ -397,37 +336,14 @@ function ainbae_bacs_colour_field( $key, $label, $s ) {
 
 function ainbae_bacs_get_private_upload_dir() {
     $base = WP_CONTENT_DIR . '/bacs-receipts-private';
-
-    if ( ! file_exists( $base ) ) {
-        wp_mkdir_p( $base );
-    }
-
-    if ( ! file_exists( $base . '/.htaccess' ) ) {
-        file_put_contents(
-            $base . '/.htaccess',
-            "# Block all direct HTTP access\n" .
-            "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n" .
-            "<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>\n"
-        );
-    }
-
-    if ( ! file_exists( $base . '/index.php' ) ) {
-        file_put_contents( $base . '/index.php', '<?php // Silence is golden.' );
-    }
-
+    if ( ! file_exists( $base ) ) wp_mkdir_p( $base );
+    if ( ! file_exists( $base . '/.htaccess' ) ) file_put_contents( $base . '/.htaccess', "# Block all direct HTTP access\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n" );
+    if ( ! file_exists( $base . '/index.php' ) ) file_put_contents( $base . '/index.php', '<?php // Silence is golden.' );
     return trailingslashit( $base );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-
 function ainbae_bacs_allowed_mimes() {
-    return array(
-        'jpg|jpeg|jpe' => 'image/jpeg',
-        'png'          => 'image/png',
-        'pdf'          => 'application/pdf',
-    );
+    return array( 'jpg|jpeg|jpe' => 'image/jpeg', 'png' => 'image/png', 'pdf' => 'application/pdf' );
 }
 
 function ainbae_bacs_current_user_can_access_order( $order, $order_key = '' ) {
@@ -438,7 +354,7 @@ function ainbae_bacs_current_user_can_access_order( $order, $order_key = '' ) {
 }
 
 function ainbae_bacs_rate_limit_exceeded( $user_key ) {
-    $tk    = 'ainbae_bacs_rl_' . md5( $user_key );
+    $tk = 'ainbae_bacs_rl_' . md5( $user_key );
     $count = (int) get_transient( $tk );
     if ( $count >= AINBAE_BACS_RATE_LIMIT_MAX ) return true;
     set_transient( $tk, $count + 1, AINBAE_BACS_RATE_LIMIT_WINDOW );
@@ -474,35 +390,39 @@ function ainbae_bacs_receipt_upload_form( $order ) {
 
     $wa_enabled = ainbae_bacs_setting( 'whatsapp_enabled' ) === '1';
     $wa_number  = ainbae_bacs_get_whatsapp_number();
-   /* translators: %1$s is the order number, %2$s is the order currency, %3$s is the order total */
-   $wa_message = sprintf(
+    
+    $wa_message = sprintf(
         __( 'Hello, I am sharing the payment receipt for my recent order.' . "\n\n " . '*Order Number:* %1$s' . "\n" . '*Amount:* %2$s %3$s' . "\n\n" . ' Please find the receipt attached below.', 'ainbae-receipt-upload' ),
         $order->get_order_number(),
         $order->get_currency(),
         $order->get_total()
     );
-    $wa_link = 'https://wa.me/' . esc_attr( $wa_number ) . '?text=' . rawurlencode( $wa_message );    
-    $br      = absint( ainbae_bacs_setting( 'card_border_radius' ) ) . 'px';
-    ?>
-    <style>
-    .ainbae-bacs-upload-wrap{margin-bottom:32px;background:<?php echo esc_attr(ainbae_bacs_setting('color_card_bg')); ?>;border:1px solid <?php echo esc_attr(ainbae_bacs_setting('color_card_border')); ?>;border-radius:<?php echo esc_attr($br); ?>;padding:32px 28px 28px;}
-    .ainbae-bacs-upload-wrap h3{text-align:center;font-size:22px;font-weight:700;color:<?php echo esc_attr(ainbae_bacs_setting('color_heading')); ?>;margin:0 0 8px;}
-    .ainbae-bacs-subtitle{text-align:center;color:<?php echo esc_attr(ainbae_bacs_setting('color_subtitle')); ?>;font-size:14px;margin:0 0 20px;}
-    .ainbae-bacs-dropzone{border:2px dashed <?php echo esc_attr(ainbae_bacs_setting('color_dropzone_border')); ?>;border-radius:10px;background:<?php echo esc_attr(ainbae_bacs_setting('color_dropzone_bg')); ?>;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px;position:relative;}
-    .ainbae-bacs-dropzone:hover,.ainbae-bacs-dropzone.ainbae-bacs-drag-over{border-color:<?php echo esc_attr(ainbae_bacs_setting('color_upload_btn_from')); ?>;}
-    .ainbae-bacs-dropzone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-    .ainbae-bacs-dropzone svg{display:block;margin:0 auto 10px;color:<?php echo esc_attr(ainbae_bacs_setting('color_icon')); ?>;}
-    .ainbae-bacs-dropzone-label{font-size:14px;color:#444;pointer-events:none;}
-    .ainbae-bacs-file-chosen{font-size:13px;color:<?php echo esc_attr(ainbae_bacs_setting('color_upload_btn_from')); ?>;font-weight:600;margin-top:6px;}
-    .ainbae-bacs-btn-upload{display:block;width:100%;padding:14px;background:linear-gradient(90deg,<?php echo esc_attr(ainbae_bacs_setting('color_upload_btn_from')); ?> 0%,<?php echo esc_attr(ainbae_bacs_setting('color_upload_btn_to')); ?> 100%);color:<?php echo esc_attr(ainbae_bacs_setting('color_upload_btn_text')); ?> !important;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:none;border-radius:8px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15);margin-bottom:6px;transition:opacity .2s,transform .1s;}
-    .ainbae-bacs-btn-upload:hover{opacity:.9;transform:translateY(-1px);}
-    .ainbae-bacs-upload-hint{text-align:center;font-size:12px;color:<?php echo esc_attr(ainbae_bacs_setting('color_hint')); ?>;margin:0 0 16px;}
-    .ainbae-bacs-or{display:flex;align-items:center;gap:10px;margin:16px 0;color:<?php echo esc_attr(ainbae_bacs_setting('color_or_text')); ?>;font-size:13px;}
-    .ainbae-bacs-or::before,.ainbae-bacs-or::after{content:'';flex:1;border-bottom:1px solid <?php echo esc_attr(ainbae_bacs_setting('color_or_line')); ?>;}
-    .ainbae-bacs-btn-wa{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:<?php echo esc_attr(ainbae_bacs_setting('color_wa_btn_bg')); ?>;color:<?php echo esc_attr(ainbae_bacs_setting('color_wa_btn_text')); ?> !important;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid <?php echo esc_attr(ainbae_bacs_setting('color_wa_btn_border')); ?>;border-radius:8px;text-decoration:none !important;transition:background .2s;}
-    </style>
+    
+    $wa_link = 'https://wa.me/' . esc_attr( $wa_number ) . '?text=' . rawurlencode( $wa_message );
 
-    <div class="ainbae-bacs-upload-wrap">
+    // Inject settings as CSS custom properties
+    $dynamic_styles = sprintf(
+        '--bacs-card-bg: %s; --bacs-card-border: %s; --bacs-card-radius: %dpx; --bacs-heading: %s; --bacs-subtitle: %s; --bacs-dropzone-border: %s; --bacs-dropzone-bg: %s; --bacs-icon: %s; --bacs-btn-from: %s; --bacs-btn-to: %s; --bacs-btn-text: %s; --bacs-hint: %s; --bacs-or-text: %s; --bacs-or-line: %s; --bacs-wa-bg: %s; --bacs-wa-text: %s; --bacs-wa-border: %s;',
+        esc_attr(ainbae_bacs_setting('color_card_bg')),
+        esc_attr(ainbae_bacs_setting('color_card_border')),
+        absint(ainbae_bacs_setting('card_border_radius')),
+        esc_attr(ainbae_bacs_setting('color_heading')),
+        esc_attr(ainbae_bacs_setting('color_subtitle')),
+        esc_attr(ainbae_bacs_setting('color_dropzone_border')),
+        esc_attr(ainbae_bacs_setting('color_dropzone_bg')),
+        esc_attr(ainbae_bacs_setting('color_icon')),
+        esc_attr(ainbae_bacs_setting('color_upload_btn_from')),
+        esc_attr(ainbae_bacs_setting('color_upload_btn_to')),
+        esc_attr(ainbae_bacs_setting('color_upload_btn_text')),
+        esc_attr(ainbae_bacs_setting('color_hint')),
+        esc_attr(ainbae_bacs_setting('color_or_text')),
+        esc_attr(ainbae_bacs_setting('color_or_line')),
+        esc_attr(ainbae_bacs_setting('color_wa_btn_bg')),
+        esc_attr(ainbae_bacs_setting('color_wa_btn_text')),
+        esc_attr(ainbae_bacs_setting('color_wa_btn_border'))
+    );
+    ?>
+    <div class="ainbae-bacs-upload-wrap" style="<?php echo $dynamic_styles; ?>">
         <h3><?php echo esc_html( ainbae_bacs_setting('label_heading') ); ?></h3>
         <p class="ainbae-bacs-subtitle"><?php echo esc_html( ainbae_bacs_setting('label_subtitle') ); ?></p>
 
@@ -534,17 +454,6 @@ function ainbae_bacs_receipt_upload_form( $order ) {
         </a>
         <?php endif; ?>
     </div>
-
-    <script>
-    (function(){
-        var input=document.getElementById('ainbae_bacs_receipt_file'),zone=document.getElementById('ainbae-bacs-dropzone'),label=document.getElementById('ainbae-bacs-file-name');
-        if(!input||!zone||!label)return;
-        input.addEventListener('change',function(){ if(this.files&&this.files[0]){label.textContent=this.files[0].name;label.className='ainbae-bacs-file-chosen';} });
-        zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('ainbae-bacs-drag-over');});
-        zone.addEventListener('dragleave',function(){zone.classList.remove('ainbae-bacs-drag-over');});
-        zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('ainbae-bacs-drag-over');if(e.dataTransfer.files&&e.dataTransfer.files[0]){input.files=e.dataTransfer.files;label.textContent=e.dataTransfer.files[0].name;label.className='ainbae-bacs-file-chosen';}});
-    })();
-    </script>
     <?php
 }
 
@@ -579,7 +488,7 @@ function ainbae_bacs_process_receipt_upload() {
     $actor = get_current_user_id() ? 'user_' . get_current_user_id() : 'ip_' . ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
     if ( ainbae_bacs_rate_limit_exceeded( $actor ) ) { wc_add_notice( __( 'Too many upload attempts. Please wait before trying again.', 'ainbae-receipt-upload' ), 'error' ); return; }
 
-    $file = $_FILES['ainbae_bacs_receipt_file']; // phpcs:ignore
+    $file = $_FILES['ainbae_bacs_receipt_file'];
     if ( $file['error'] !== UPLOAD_ERR_OK )   { wc_add_notice( sprintf( __( 'Upload error (code %d).', 'ainbae-receipt-upload' ), (int) $file['error'] ), 'error' ); return; }
     if ( $file['size'] > AINBAE_BACS_MAX_UPLOAD_SIZE ){ wc_add_notice( __( 'File is too large. Maximum size is 5 MB.', 'ainbae-receipt-upload' ), 'error' ); return; }
 
@@ -595,7 +504,6 @@ function ainbae_bacs_process_receipt_upload() {
     update_post_meta( $order_id, '_ainbae_bacs_receipt_mime',     sanitize_mime_type( $file_info['type'] ) );
     update_post_meta( $order_id, '_ainbae_bacs_receipt_uploaded', current_time( 'mysql' ) );
     
-    /* translators: %s is the date/time of upload */
     $order->add_order_note( sprintf( __( 'Customer uploaded a bank transfer receipt on %s. Use the admin panel to view it securely.', 'ainbae-receipt-upload' ), current_time( 'mysql' ) ) );
 
     wc_add_notice( __( 'Receipt uploaded successfully. Thank you! We will verify your payment shortly.', 'ainbae-receipt-upload' ), 'success' );
@@ -618,10 +526,7 @@ function ainbae_bacs_display_receipt_in_admin( $order ) {
     echo '<br class="clear"><h3>' . esc_html__( 'Bank Transfer Receipt', 'ainbae-receipt-upload' ) . '</h3>';
 
     if ( $path && file_exists( $path ) ) {
-        $url = wp_nonce_url(
-            add_query_arg( array( 'action' => 'ainbae_bacs_view_receipt', 'order_id' => $order->get_id() ), admin_url( 'admin-post.php' ) ),
-            'ainbae_bacs_view_receipt_' . $order->get_id()
-        );
+        $url = wp_nonce_url( add_query_arg( array( 'action' => 'ainbae_bacs_view_receipt', 'order_id' => $order->get_id() ), admin_url( 'admin-post.php' ) ), 'ainbae_bacs_view_receipt_' . $order->get_id() );
         echo '<p style="margin-top:10px;"><a href="' . esc_url( $url ) . '" target="_blank" class="button button-primary">' . esc_html__( 'View Uploaded Receipt', 'ainbae-receipt-upload' ) . '</a>';
         if ( $uploaded ) echo ' &nbsp;<small style="color:#666;">' . esc_html__( 'Uploaded:', 'ainbae-receipt-upload' ) . ' ' . esc_html( $uploaded ) . '</small>';
         echo '</p>';
@@ -654,6 +559,6 @@ function ainbae_bacs_serve_receipt_to_admin() {
     header( 'Content-Length: ' . filesize( $real_path ) );
     header( 'Content-Disposition: inline; filename="receipt-order-' . $order_id . '.' . pathinfo( $real_path, PATHINFO_EXTENSION ) . '"' );
     header( 'X-Content-Type-Options: nosniff' );
-    readfile( $real_path ); // phpcs:ignore
+    readfile( $real_path ); 
     exit;
 }

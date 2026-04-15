@@ -1,17 +1,35 @@
-/* Safely target elements to avoid breaking WordPress native UI (like wp-color-picker) */
 #ainbae-bacs-settings-wrap {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Only apply box-sizing to our specific custom elements */
-.ainbae-bacs-card,
-.ainbae-bacs-card-header,
-.ainbae-bacs-card-body,
-.ainbae-bacs-field,
-.ainbae-bacs-input,
-.ainbae-bacs-range-row {
-  box-sizing: border-box;
+.ainbae-bacs-page-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.ainbae-bacs-page-header img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+.ainbae-bacs-page-header p {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.ainbae-bacs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  max-width: 1100px;
+  align-items: start;
+}
+.ainbae-bacs-col {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
 /* Card styling */
@@ -19,8 +37,9 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  overflow: visible;
+  overflow: visible; /* Prevents color picker cutoff */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 .ainbae-bacs-card-header {
   display: flex;
@@ -33,9 +52,11 @@
   border-bottom: 1px solid #e5e7eb;
   border-top-left-radius: 11px;
   border-top-right-radius: 11px;
+  box-sizing: border-box;
 }
 .ainbae-bacs-card-body {
   padding: 16px 18px;
+  box-sizing: border-box;
 }
 
 .ainbae-bacs-section-title {
@@ -49,6 +70,7 @@
 
 .ainbae-bacs-field {
   margin-bottom: 14px;
+  box-sizing: border-box;
 }
 .ainbae-bacs-field:last-child {
   margin-bottom: 0;
@@ -81,12 +103,24 @@
   padding: 7px 10px;
   font-size: 13px;
   color: #1a1a1a;
+  box-sizing: border-box;
   transition: border-color 0.15s;
 }
 .ainbae-bacs-input:focus {
   outline: none;
   border-color: #0aa7ff;
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+.ainbae-bacs-input-prefix {
+  position: relative;
+}
+.ainbae-bacs-input-prefix span {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 14px;
 }
 
 /* Layout rules for the color row */
@@ -105,65 +139,12 @@
   color: #374151;
 }
 
-/* Customizing Native WP Color Picker (Iris) safely */
-#ainbae-bacs-settings-wrap .wp-picker-container {
-  display: inline-block;
-  vertical-align: middle;
-}
-#ainbae-bacs-settings-wrap .wp-picker-container * {
-  box-sizing: content-box;
-}
-#ainbae-bacs-settings-wrap .wp-color-result.button {
-  width: 28px !important;
-  height: 28px !important;
-  min-height: 0 !important;
-  margin: 0 8px 0 0 !important;
-  padding: 0 !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 4px !important;
-  box-shadow: none !important;
-  background-image: none !important;
-  vertical-align: middle;
-}
-#ainbae-bacs-settings-wrap .wp-color-result-text {
-  display: none !important;
-}
-#ainbae-bacs-settings-wrap .wp-picker-input-wrap {
-  display: inline-block !important;
-  vertical-align: middle;
-}
-#ainbae-bacs-settings-wrap .wp-picker-input-wrap input[type="text"] {
-  width: 70px;
-  height: 28px !important;
-  line-height: 28px !important;
-  padding: 0 8px !important;
-  font-family: monospace;
-  font-size: 13px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  margin: 0;
-  box-sizing: border-box !important;
-}
-#ainbae-bacs-settings-wrap .wp-picker-input-wrap input[type="text"]:focus {
-  border-color: #0aa7ff;
-  box-shadow: 0 0 0 1px rgba(10, 167, 255, 0.2);
-  outline: none;
-}
-#ainbae-bacs-settings-wrap .wp-picker-default,
-#ainbae-bacs-settings-wrap .wp-picker-clear {
-  display: none !important;
-}
-#ainbae-bacs-settings-wrap .wp-picker-holder {
-  position: absolute;
-  z-index: 9999;
-  margin-top: 5px;
-  right: 0;
+/* Fixing Native WP Color Picker (Iris) */
+.ainbae-bacs-colour-right .wp-picker-container * {
+  box-sizing: content-box; /* Prevent WordPress global borders breaking layout */
 }
 
 /* Range styles */
-.ainbae-bacs-field-range {
-  margin-bottom: 14px;
-}
 .ainbae-bacs-range-row {
   display: flex;
   align-items: center;
@@ -174,11 +155,10 @@
   accent-color: #0aa7ff;
   cursor: pointer;
 }
-.ainbae-bacs-range-input.ainbae-bacs-input {
+.ainbae-bacs-range-input {
   width: 64px;
   text-align: center;
   font-weight: 600;
-  color: #1a1a1a;
 }
 
 /* Toggle */
@@ -219,4 +199,32 @@
 }
 .ainbae-bacs-toggle input:checked + .ainbae-bacs-toggle-slider::before {
   transform: translateX(20px);
+}
+
+.ainbae-bacs-sticky-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  margin-top: 24px;
+  max-width: 1100px;
+  padding: 14px 20px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px 12px 0 0;
+}
+.ainbae-bacs-save-btn {
+  background: linear-gradient(135deg, #0aa7ff, #0066ff);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(10, 167, 255, 0.4);
+  transition: opacity 0.2s;
 }
