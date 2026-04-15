@@ -1,0 +1,222 @@
+/* Safely target elements to avoid breaking WordPress native UI (like wp-color-picker) */
+#ainbae-bacs-settings-wrap {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Only apply box-sizing to our specific custom elements */
+.ainbae-bacs-card,
+.ainbae-bacs-card-header,
+.ainbae-bacs-card-body,
+.ainbae-bacs-field,
+.ainbae-bacs-input,
+.ainbae-bacs-range-row {
+  box-sizing: border-box;
+}
+
+/* Card styling */
+.ainbae-bacs-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: visible;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+.ainbae-bacs-card-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 18px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a1a1a;
+  border-bottom: 1px solid #e5e7eb;
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
+}
+.ainbae-bacs-card-body {
+  padding: 16px 18px;
+}
+
+.ainbae-bacs-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+  margin: 0 0 8px;
+}
+
+.ainbae-bacs-field {
+  margin-bottom: 14px;
+}
+.ainbae-bacs-field:last-child {
+  margin-bottom: 0;
+}
+.ainbae-bacs-field-toggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ainbae-bacs-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+}
+.ainbae-bacs-desc {
+  margin: 0 0 6px;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ainbae-bacs-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: #1a1a1a;
+  transition: border-color 0.15s;
+}
+.ainbae-bacs-input:focus {
+  outline: none;
+  border-color: #0aa7ff;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+/* Layout rules for the color row */
+.ainbae-bacs-colour-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.ainbae-bacs-colour-row:last-child {
+  border-bottom: none;
+}
+.ainbae-bacs-colour-label {
+  font-size: 13px;
+  color: #374151;
+}
+
+/* Customizing Native WP Color Picker (Iris) safely */
+#ainbae-bacs-settings-wrap .wp-picker-container {
+  display: inline-block;
+  vertical-align: middle;
+}
+#ainbae-bacs-settings-wrap .wp-picker-container * {
+  box-sizing: content-box;
+}
+#ainbae-bacs-settings-wrap .wp-color-result.button {
+  width: 28px !important;
+  height: 28px !important;
+  min-height: 0 !important;
+  margin: 0 8px 0 0 !important;
+  padding: 0 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  vertical-align: middle;
+}
+#ainbae-bacs-settings-wrap .wp-color-result-text {
+  display: none !important;
+}
+#ainbae-bacs-settings-wrap .wp-picker-input-wrap {
+  display: inline-block !important;
+  vertical-align: middle;
+}
+#ainbae-bacs-settings-wrap .wp-picker-input-wrap input[type="text"] {
+  width: 70px;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+  font-family: monospace;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  margin: 0;
+  box-sizing: border-box !important;
+}
+#ainbae-bacs-settings-wrap .wp-picker-input-wrap input[type="text"]:focus {
+  border-color: #0aa7ff;
+  box-shadow: 0 0 0 1px rgba(10, 167, 255, 0.2);
+  outline: none;
+}
+#ainbae-bacs-settings-wrap .wp-picker-default,
+#ainbae-bacs-settings-wrap .wp-picker-clear {
+  display: none !important;
+}
+#ainbae-bacs-settings-wrap .wp-picker-holder {
+  position: absolute;
+  z-index: 9999;
+  margin-top: 5px;
+  right: 0;
+}
+
+/* Range styles */
+.ainbae-bacs-field-range {
+  margin-bottom: 14px;
+}
+.ainbae-bacs-range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ainbae-bacs-range-slider {
+  flex: 1;
+  accent-color: #0aa7ff;
+  cursor: pointer;
+}
+.ainbae-bacs-range-input.ainbae-bacs-input {
+  width: 64px;
+  text-align: center;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Toggle */
+.ainbae-bacs-toggle {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.ainbae-bacs-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.ainbae-bacs-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 26px;
+  transition: 0.25s;
+}
+.ainbae-bacs-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.25s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.ainbae-bacs-toggle input:checked + .ainbae-bacs-toggle-slider {
+  background: #0aa7ff;
+}
+.ainbae-bacs-toggle input:checked + .ainbae-bacs-toggle-slider::before {
+  transform: translateX(20px);
+}
