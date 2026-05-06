@@ -301,6 +301,14 @@ If this plugin helps your store, please consider:
 
 ## 📝 Changelog
 
+### 1.0.2
+
+- Moved private receipt storage from wp-content root into `wp-content/uploads/ainbae-receipt-upload-for-woocommerce/` using `wp_upload_dir()` per WordPress guidelines
+- Replaced `WP_CONTENT_DIR` constant with `wp_upload_dir()` for correct path resolution across all WordPress configurations
+- Replaced echo of binary file contents with `readfile()` to stream files without buffering or escaping concerns
+- Removed broken donate link from readme.txt
+- Updated readme FAQ to reflect new storage path and Nginx configuration instructions
+
 ### 1.0.1
 
 - Security: replaced `file_put_contents()` with WP Filesystem API

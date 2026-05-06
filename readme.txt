@@ -4,10 +4,9 @@ Tags: woocommerce, payment verification, receipt, bank transfer, payment receipt
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
-Donate link: https://www.ainbae.com/donate
 
 Allow customers to upload bank transfer receipts directly from the WooCommerce order details page.
 
@@ -60,13 +59,13 @@ No — by design. The upload widget only appears for orders paid via **Bank Tran
 
 = Where are the uploaded files stored? =
 
-Files are stored in `wp-content/bacs-receipts-private/`, which is outside the normal media library. A deny-all `.htaccess` file blocks direct browser access on Apache servers.
+Files are stored in `wp-content/uploads/ainbae-receipt-upload-for-woocommerce/`, which is outside the normal media library. A deny-all `.htaccess` file blocks direct browser access on Apache servers.
 
 = Does it work on Nginx? =
 
-The `.htaccess` protection file is Apache-specific and has **no effect on Nginx**. If your server runs Nginx, you must add a location rule to deny access to the `bacs-receipts-private` directory. Add this to your Nginx server block:
+The `.htaccess` protection file is Apache-specific and has **no effect on Nginx**. If your server runs Nginx, you must add a location rule to deny access to the `ainbae-receipt-upload-for-woocommerce` directory inside uploads. Add this to your Nginx server block:
 
-`location ~* /bacs-receipts-private/ { deny all; }`
+`location ~* /uploads/ainbae-receipt-upload-for-woocommerce/ { deny all; }`
 
 Without this rule, uploaded files on Nginx servers may be directly accessible via URL.
 
@@ -113,6 +112,13 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 
 == Changelog ==
+
+= 1.0.2 =
+- Moved private receipt storage from wp-content root into wp-content/uploads/ainbae-receipt-upload-for-woocommerce/ using wp_upload_dir() per WordPress guidelines
+- Replaced WP_CONTENT_DIR constant with wp_upload_dir() for correct path resolution across all WordPress configurations
+- Replaced echo of binary file contents with readfile() to stream files without buffering or escaping concerns
+- Removed broken donate link from readme.txt
+- Updated readme FAQ to reflect new storage path and Nginx configuration instructions
 
 = 1.0.1 =
 - Fixed security and sanitization issues

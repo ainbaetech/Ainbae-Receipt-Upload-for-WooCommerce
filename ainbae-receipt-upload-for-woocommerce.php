@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Ainbae Receipt Upload for WooCommerce
  * Description: Allows customers to upload bank transfer receipts on the order detail page.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Ainbae
  * Author URI: https://www.ainbae.com
  * License: GPL-2.0-or-later
@@ -247,7 +247,7 @@ function ainbae_bacs_render_settings_page()
                                     <span class="ainbae-bacs-toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="ainbae-bacs-field" id="ainbae-bacs-wa-number-row" <?php echo $s['whatsapp_enabled'] !== '1' ? 'style="opacity:.4;pointer-events:none;"' : ''; ?>>
+                            <div class="ainbae-bacs-field" id="ainbae-bacs-wa-number-row" <?php if ( $s['whatsapp_enabled'] !== '1' ) { echo 'style="' . esc_attr( 'opacity:.4;pointer-events:none;' ) . '"'; } ?>>
                                 <label class="ainbae-bacs-label" for="whatsapp_number"><?php esc_html_e('WhatsApp Number', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
                                 <p class="ainbae-bacs-desc"><?php esc_html_e('Include country code, digits only (e.g. 1234567890)', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
                                 <div class="ainbae-bacs-input-prefix">
@@ -398,11 +398,38 @@ function ainbae_bacs_colour_field($key, $label, $s)
 
 function ainbae_bacs_get_private_upload_dir()
 {
-    $base = WP_CONTENT_DIR . '/bacs-receipts-private';
-    if (! file_exists($base)) wp_mkdir_p($base);
-    if (! file_exists($base . '/.htaccess')) file_put_contents($base . '/.htaccess', "# Block all direct HTTP access\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n");
-    if (! file_exists($base . '/index.php')) file_put_contents($base . '/index.php', '<?php // Silence is golden.');
-    return trailingslashit($base);
+    $upload_dir = wp_upload_dir();
+    $base       = $upload_dir['basedir'] . '/ainbae-receipt-upload-for-woocommerce';
+
+    if ( ! file_exists( $base ) ) {
+        wp_mkdir_p( $base );
+    }
+
+    $htaccess = $base . '/.htaccess';
+    if ( ! file_exists( $htaccess ) ) {
+        global $wp_filesystem;
+        if ( empty( $wp_filesystem ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+        $wp_filesystem->put_contents(
+            $htaccess,
+            "# Block all direct HTTP access\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n",
+            FS_CHMOD_FILE
+        );
+    }
+
+    $index = $base . '/index.php';
+    if ( ! file_exists( $index ) ) {
+        global $wp_filesystem;
+        if ( empty( $wp_filesystem ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+        $wp_filesystem->put_contents( $index, '<?php // Silence is golden.', FS_CHMOD_FILE );
+    }
+
+    return trailingslashit( $base );
 }
 
 function ainbae_bacs_allowed_mimes()
@@ -709,50 +736,59 @@ function ainbae_bacs_serve_receipt_to_admin()
         wp_die(esc_html__('Invalid request.', 'ainbae-receipt-upload-for-woocommerce'), 400);
     }
 
-    $path = get_post_meta($order_id, '_ainbae_bacs_receipt_path', true);
-    $mime = get_post_meta($order_id, '_ainbae_bacs_receipt_mime', true);
-
-    // ── Bootstrap WP_Filesystem ───────────────────────────────────────────
-    global $wp_filesystem;
-    if (empty($wp_filesystem)) {
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        WP_Filesystem();
-    }
+    $path = get_post_meta( $order_id, '_ainbae_bacs_receipt_path', true );
+    $mime = get_post_meta( $order_id, '_ainbae_bacs_receipt_mime', true );
 
     // ── Validate path exists ──────────────────────────────────────────────
-    if (! $path || ! $wp_filesystem->exists($path) || ! $wp_filesystem->is_file($path)) {
-        wp_die(esc_html__('Receipt not found.', 'ainbae-receipt-upload-for-woocommerce'), 404);
+    if ( ! $path || ! file_exists( $path ) || ! is_file( $path ) ) {
+        wp_die( esc_html__( 'Receipt not found.', 'ainbae-receipt-upload-for-woocommerce' ), 404 );
     }
 
     // ── Path traversal protection ─────────────────────────────────────────
-    $real_path = realpath($path);
-    $real_dir  = realpath(ainbae_bacs_get_private_upload_dir());
+    $real_path     = realpath( $path );
+    $real_dir      = realpath( ainbae_bacs_get_private_upload_dir() );
+    // Legacy: receipts uploaded by v1.0.1 were stored in wp-content/bacs-receipts-private/.
+    $upload_info       = wp_upload_dir();
+    $content_base      = dirname( $upload_info['basedir'] );
+    $real_dir_legacy   = realpath( $content_base . '/bacs-receipts-private' );
 
-    if (false === $real_path || false === $real_dir || strpos($real_path, $real_dir) !== 0) {
-        wp_die(esc_html__('Access denied.', 'ainbae-receipt-upload-for-woocommerce'), 403);
+    $in_current = $real_dir && $real_path && strpos( $real_path, $real_dir ) === 0;
+    $in_legacy  = $real_dir_legacy && $real_path && strpos( $real_path, $real_dir_legacy ) === 0;
+
+    if ( false === $real_path || ( ! $in_current && ! $in_legacy ) ) {
+        wp_die( esc_html__( 'Access denied.', 'ainbae-receipt-upload-for-woocommerce' ), 403 );
     }
 
     // ── MIME type validation ──────────────────────────────────────────────
-    if (! $mime || ! in_array($mime, ainbae_bacs_allowed_mimes(), true)) {
-        wp_die(esc_html__('Invalid file type.', 'ainbae-receipt-upload-for-woocommerce'), 400);
-    }
-
-    // ── Read file via WP_Filesystem ───────────────────────────────────────
-    $file_contents = $wp_filesystem->get_contents($real_path);
-
-    if (false === $file_contents) {
-        wp_die(esc_html__('Could not read the receipt file.', 'ainbae-receipt-upload-for-woocommerce'), 500);
+    if ( ! $mime || ! in_array( $mime, ainbae_bacs_allowed_mimes(), true ) ) {
+        wp_die( esc_html__( 'Invalid file type.', 'ainbae-receipt-upload-for-woocommerce' ), 400 );
     }
 
     // ── Serve file ────────────────────────────────────────────────────────
-    $ext = pathinfo($real_path, PATHINFO_EXTENSION);
+    $ext       = pathinfo( $real_path, PATHINFO_EXTENSION );
+    $file_size = filesize( $real_path );
+
+    if ( false === $file_size || 0 === $file_size ) {
+        wp_die( esc_html__( 'Could not read the receipt file.', 'ainbae-receipt-upload-for-woocommerce' ), 500 );
+    }
+
+    // WordPress (and plugins) may have buffered output during admin-post.php
+    // initialization. Any buffered HTML prepended to binary data will corrupt
+    // the image/PDF stream. Discard every active output buffer before serving.
+    while ( ob_get_level() > 0 ) {
+        ob_end_clean();
+    }
 
     nocache_headers();
-    header('Content-Type: '        . sanitize_mime_type($mime));
-    header('Content-Length: '      . strlen($file_contents));
-    header('Content-Disposition: inline; filename="receipt-order-' . $order_id . '.' . esc_attr($ext) . '"');
-    header('X-Content-Type-Options: nosniff');
+    header( 'Content-Type: '        . sanitize_mime_type( $mime ) );
+    header( 'Content-Length: '      . $file_size );
+    header( 'Content-Disposition: inline; filename="receipt-order-' . $order_id . '.' . esc_attr( $ext ) . '"' );
+    header( 'X-Content-Type-Options: nosniff' );
 
-    echo $file_contents; // phpcs:ignore WordPress.Security.EscapeOutput -- Binary file output (image/PDF), escaping would corrupt content.
+    // Stream the binary file directly — readfile() outputs straight to the
+    // client without loading data into a PHP variable, avoiding any
+    // escaping concerns for binary content (images / PDFs).
+    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Binary streaming to browser; WP_Filesystem has no streaming equivalent.
+    readfile( $real_path );
     exit;
 }
