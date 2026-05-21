@@ -301,6 +301,11 @@ If this plugin helps your store, please consider:
 
 ## 📝 Changelog
 
+### 1.0.3
+
+- Updated tested up to version to 7.0
+- Updated stable tag to 1.0.3 for latest release
+
 ### 1.0.2
 
 - Moved private receipt storage from wp-content root into `wp-content/uploads/ainbae-receipt-upload-for-woocommerce/` using `wp_upload_dir()` per WordPress guidelines
