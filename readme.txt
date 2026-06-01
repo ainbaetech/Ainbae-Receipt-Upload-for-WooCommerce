@@ -4,7 +4,7 @@ Tags: woocommerce, payment verification, receipt, bank transfer, payment receipt
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -113,6 +113,12 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 == Changelog ==
 
+= 1.2.0 =
+- Fixed Setting Page WhatsApp number field prefix input styling
+- Added languages directory and translation files
+- Updated tested up to version to 10.8.1 (WooCommerce)
+- Updated stable tag to 1.2.0 for latest release
+
 = 1.0.3 =
 - Updated tested up to version to 7.0
 - Updated stable tag to 1.0.3 for latest release
@@ -134,6 +140,9 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 
 == Upgrade Notice ==
- 
-= 1.0.3 =
-Updated tested up to version to 7.0 and stable tag to 1.0.3 for latest release.
+
+= 1.2.0 =
+- Fixed Setting Page WhatsApp number field prefix input styling
+- Added languages directory and translation files
+- Updated tested up to version to 10.8.1 (WooCommerce)
+- Updated stable tag to 1.2.0 for latest release

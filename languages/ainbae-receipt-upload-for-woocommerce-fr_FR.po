@@ -1,0 +1,370 @@
+# French (France) translation for Ainbae Receipt Upload for WooCommerce
+# Copyright (C) 2026 Ainbae
+# This file is distributed under the GPL-2.0-or-later.
+# Translators: (Translate the msgstr entries below)
+msgid ""
+msgstr ""
+"Project-Id-Version: Ainbae Receipt Upload for WooCommerce 1.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trunk\n"
+"POT-Creation-Date: 2026-05-06T11:39:39+00:00\n"
+"PO-Revision-Date: 2026-05-29 18:09+0000\n"
+"Last-Translator: Ainbae <support@ainbae.com>\n"
+"Language-Team: French (France) <support@ainbae.com>\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Antigravity Language Generator 1.1\n"
+"X-Domain: ainbae-receipt-upload-for-woocommerce\n"
+
+#. Plugin Name of the plugin
+#: ainbae-receipt-upload-for-woocommerce.php
+msgid "Ainbae Receipt Upload for WooCommerce"
+msgstr "Ainbae Téléchargement de reçus pour WooCommerce"
+
+#. Description of the plugin
+#: ainbae-receipt-upload-for-woocommerce.php
+msgid "Allows customers to upload bank transfer receipts on the order detail page."
+msgstr "Permet aux clients de télécharger des reçus de virement bancaire sur la page de détails de la commande."
+
+#. Author of the plugin
+#: ainbae-receipt-upload-for-woocommerce.php
+msgid "Ainbae"
+msgstr "Ainbae"
+
+#. Author URI of the plugin
+#: ainbae-receipt-upload-for-woocommerce.php
+msgid "https://www.ainbae.com"
+msgstr "https://www.ainbae.com"
+
+#: ainbae-receipt-upload-for-woocommerce.php:29
+msgid "Ainbae Receipt Upload requires WooCommerce to be installed and active."
+msgstr "Ainbae Téléchargement de reçus nécessite que WooCommerce soit installé et activé."
+
+#: ainbae-receipt-upload-for-woocommerce.php:79
+msgid "Verify Your Payment"
+msgstr "Vérifiez votre paiement"
+
+#: ainbae-receipt-upload-for-woocommerce.php:80
+msgid "Please upload a screenshot of your transaction receipt, or send it directly via WhatsApp to process your order."
+msgstr "Veuillez télécharger une capture d'écran de votre reçu de transaction ou l'envoyer directement via WhatsApp pour traiter votre commande."
+
+#: ainbae-receipt-upload-for-woocommerce.php:81
+msgid "Click to upload, or drag and drop your receipt file"
+msgstr "Cliquez pour télécharger ou glissez-déposez votre fichier de reçu"
+
+#: ainbae-receipt-upload-for-woocommerce.php:82
+#: ainbae-receipt-upload-for-woocommerce.php:110
+msgid "Upload Receipt"
+msgstr "Télécharger le reçu"
+
+#: ainbae-receipt-upload-for-woocommerce.php:83
+msgid "Send Receipt via WhatsApp"
+msgstr "Envoyer le reçu par WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:84
+msgid "Allowed formats: JPG, PNG, PDF. Max size: 5 MB."
+msgstr "Formats autorisés : JPG, PNG, PDF. Taille max : 5 Mo."
+
+#: ainbae-receipt-upload-for-woocommerce.php:110
+msgid "Ainbae Receipt Upload Settings"
+msgstr "Paramètres de téléchargement de reçus Ainbae"
+
+#: ainbae-receipt-upload-for-woocommerce.php:199
+#: ainbae-receipt-upload-for-woocommerce.php:730
+#: ainbae-receipt-upload-for-woocommerce.php:759
+msgid "Access denied."
+msgstr "Accès refusé."
+
+#: ainbae-receipt-upload-for-woocommerce.php:208
+msgid "Ainbae Logo"
+msgstr "Logo Ainbae"
+
+#: ainbae-receipt-upload-for-woocommerce.php:209
+msgid "Customise the payment receipt widget shown to customers"
+msgstr "Personnalisez le widget de reçu de paiement affiché aux clients"
+
+#: ainbae-receipt-upload-for-woocommerce.php:222
+msgid "Settings saved successfully."
+msgstr "Paramètres enregistrés avec succès."
+
+#: ainbae-receipt-upload-for-woocommerce.php:237
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:242
+msgid "Enable WhatsApp Button"
+msgstr "Activer le bouton WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:243
+msgid "Show a \"Send via WhatsApp\" button below the upload form"
+msgstr "Afficher un bouton « Envoyer par WhatsApp » sous le formulaire de téléchargement"
+
+#: ainbae-receipt-upload-for-woocommerce.php:251
+msgid "WhatsApp Number"
+msgstr "Numéro WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:252
+msgid "Include country code, digits only (e.g. 1234567890)"
+msgstr "Indiquez l'indicatif du pays, chiffres uniquement (ex. 1234567890)"
+
+#: ainbae-receipt-upload-for-woocommerce.php:267
+msgid "Text & Labels"
+msgstr "Texte et libellés"
+
+#: ainbae-receipt-upload-for-woocommerce.php:272
+#: ainbae-receipt-upload-for-woocommerce.php:360
+msgid "Heading"
+msgstr "En-tête"
+
+#: ainbae-receipt-upload-for-woocommerce.php:272
+msgid "Main title at the top of the widget"
+msgstr "Titre principal en haut du widget"
+
+#: ainbae-receipt-upload-for-woocommerce.php:273
+#: ainbae-receipt-upload-for-woocommerce.php:361
+msgid "Subtitle"
+msgstr "Sous-titre"
+
+#: ainbae-receipt-upload-for-woocommerce.php:273
+msgid "Instruction text below the heading"
+msgstr "Texte d'instructions sous l'en-tête"
+
+#: ainbae-receipt-upload-for-woocommerce.php:274
+msgid "Drop Zone Text"
+msgstr "Texte de la zone de dépôt"
+
+#: ainbae-receipt-upload-for-woocommerce.php:274
+msgid "Text inside the file drop area"
+msgstr "Texte dans la zone de dépôt de fichiers"
+
+#: ainbae-receipt-upload-for-woocommerce.php:275
+#: ainbae-receipt-upload-for-woocommerce.php:349
+msgid "Upload Button"
+msgstr "Bouton de téléchargement"
+
+#: ainbae-receipt-upload-for-woocommerce.php:275
+msgid "Label on the upload button"
+msgstr "Libellé du bouton de téléchargement"
+
+#: ainbae-receipt-upload-for-woocommerce.php:276
+#: ainbae-receipt-upload-for-woocommerce.php:354
+msgid "WhatsApp Button"
+msgstr "Bouton WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:276
+msgid "Label on the WhatsApp button"
+msgstr "Libellé du bouton WhatsApp"
+
+#: ainbae-receipt-upload-for-woocommerce.php:277
+msgid "Hint Text"
+msgstr "Texte d'indication"
+
+#: ainbae-receipt-upload-for-woocommerce.php:277
+msgid "Small text below the upload button"
+msgstr "Petit texte sous le bouton de téléchargement"
+
+#: ainbae-receipt-upload-for-woocommerce.php:296
+msgid "Layout"
+msgstr "Mise en page"
+
+#: ainbae-receipt-upload-for-woocommerce.php:300
+msgid "Card Corner Radius (px)"
+msgstr "Rayon d'angle de carte (px)"
+
+#: ainbae-receipt-upload-for-woocommerce.php:301
+msgid "Roundness of the outer card corners (0 = square, 40 = pill)"
+msgstr "Arrondi des coins extérieurs (0 = carré, 40 = pilule)"
+
+#: ainbae-receipt-upload-for-woocommerce.php:320
+msgid "Live Preview"
+msgstr "Aperçu en direct"
+
+#: ainbae-receipt-upload-for-woocommerce.php:324
+msgid "Updates automatically as you change settings above"
+msgstr "Se met à jour automatiquement lorsque vous modifiez les paramètres"
+
+#: ainbae-receipt-upload-for-woocommerce.php:337
+msgid "Colours"
+msgstr "Couleurs"
+
+#: ainbae-receipt-upload-for-woocommerce.php:340
+msgid "Card"
+msgstr "Carte"
+
+#: ainbae-receipt-upload-for-woocommerce.php:341
+#: ainbae-receipt-upload-for-woocommerce.php:345
+#: ainbae-receipt-upload-for-woocommerce.php:355
+msgid "Background"
+msgstr "Arrière-plan"
+
+#: ainbae-receipt-upload-for-woocommerce.php:342
+#: ainbae-receipt-upload-for-woocommerce.php:346
+#: ainbae-receipt-upload-for-woocommerce.php:356
+msgid "Border"
+msgstr "Bordure"
+
+#: ainbae-receipt-upload-for-woocommerce.php:344
+msgid "Drop Zone"
+msgstr "Zone de dépôt"
+
+#: ainbae-receipt-upload-for-woocommerce.php:347
+msgid "Icon"
+msgstr "Icône"
+
+#: ainbae-receipt-upload-for-woocommerce.php:350
+msgid "Gradient Start"
+msgstr "Début du dégradé"
+
+#: ainbae-receipt-upload-for-woocommerce.php:351
+msgid "Gradient End"
+msgstr "Fin du dégradé"
+
+#: ainbae-receipt-upload-for-woocommerce.php:352
+#: ainbae-receipt-upload-for-woocommerce.php:357
+#: ainbae-receipt-upload-for-woocommerce.php:366
+msgid "Text"
+msgstr "Texte"
+
+#: ainbae-receipt-upload-for-woocommerce.php:359
+msgid "Typography"
+msgstr "Typographie"
+
+#: ainbae-receipt-upload-for-woocommerce.php:362
+msgid "Hint"
+msgstr "Indication"
+
+#: ainbae-receipt-upload-for-woocommerce.php:364
+msgid "OR Divider"
+msgstr "Séparateur OU"
+
+#: ainbae-receipt-upload-for-woocommerce.php:365
+msgid "Line"
+msgstr "Ligne"
+
+#: ainbae-receipt-upload-for-woocommerce.php:373
+msgid "Changes apply to all customers immediately after saving."
+msgstr "Les modifications s'appliquent immédiatement à tous les clients après l'enregistrement."
+
+#: ainbae-receipt-upload-for-woocommerce.php:375
+msgid "Save Settings"
+msgstr "Enregistrer les paramètres"
+
+#: ainbae-receipt-upload-for-woocommerce.php:471
+msgid "Payment Verified."
+msgstr "Paiement vérifié."
+
+#: ainbae-receipt-upload-for-woocommerce.php:471
+msgid "Your order is being processed."
+msgstr "Votre commande est en cours de traitement."
+
+#: ainbae-receipt-upload-for-woocommerce.php:481
+msgid "Payment Receipt Uploaded."
+msgstr "Reçu de paiement téléchargé."
+
+#: ainbae-receipt-upload-for-woocommerce.php:481
+msgid "We will verify your payment shortly."
+msgstr "Nous vérifierons votre paiement sous peu."
+
+#: ainbae-receipt-upload-for-woocommerce.php:490
+#, php-format
+msgid ""
+"Hello, I am sharing the payment receipt for my recent order.\n"
+"\n"
+" *Order Number:* %1$s\n"
+" *Amount:* %2$s %3$s\n"
+"\n"
+" Please find the receipt attached below."
+msgstr ""
+"Bonjour, je partage le reçu de paiement pour ma commande récente.\n"
+"\n"
+" *Numéro de commande :* %1$s\n"
+" *Montant :* %2$s %3$s\n"
+"\n"
+" Veuillez trouver le reçu ci-joint ci-dessous."
+
+#: ainbae-receipt-upload-for-woocommerce.php:549
+msgid "OR"
+msgstr "OU"
+
+#: ainbae-receipt-upload-for-woocommerce.php:585
+msgid "Security check failed. Please refresh the page and try again."
+msgstr "La vérification de sécurité a échoué. Veuillez actualiser la page et réessayer."
+
+#: ainbae-receipt-upload-for-woocommerce.php:591
+msgid "Invalid order."
+msgstr "Commande invalide."
+
+#: ainbae-receipt-upload-for-woocommerce.php:599
+msgid "You do not have permission to upload a receipt for this order."
+msgstr "Vous n'avez pas la permission de télécharger un reçu pour cette commande."
+
+#: ainbae-receipt-upload-for-woocommerce.php:604
+msgid "A receipt cannot be uploaded for this order in its current status."
+msgstr "Un reçu ne peut pas être téléchargé pour cette commande dans son état actuel."
+
+#: ainbae-receipt-upload-for-woocommerce.php:609
+msgid "A receipt has already been uploaded for this order."
+msgstr "Un reçu a déjà été téléchargé pour cette commande."
+
+#: ainbae-receipt-upload-for-woocommerce.php:622
+msgid "Too many upload attempts. Please wait before trying again."
+msgstr "Trop de tentatives de téléchargement. Veuillez patienter avant de réessayer."
+
+#. translators: %d: File upload error code number.
+#: ainbae-receipt-upload-for-woocommerce.php:631
+#, php-format
+msgid "Upload error (code %d)."
+msgstr "Erreur de téléchargement (code %d)."
+
+#: ainbae-receipt-upload-for-woocommerce.php:636
+msgid "File is too large. Maximum size is 5 MB."
+msgstr "Le fichier est trop volumineux. La taille maximale est de 5 Mo."
+
+#: ainbae-receipt-upload-for-woocommerce.php:680
+msgid "Invalid file type. Only JPG, PNG, and PDF are accepted."
+msgstr "Type de fichier invalide. Seuls JPG, PNG et PDF sont acceptés."
+
+#. translators: %s: Date and time when the receipt was uploaded (e.g. 2025-01-17 14:30:00).
+#: ainbae-receipt-upload-for-woocommerce.php:692
+#, php-format
+msgid "Customer uploaded a bank transfer receipt on %s. Use the admin panel to view it securely."
+msgstr "Le client a téléchargé un reçu de virement bancaire le %s. Utilisez le panneau d'administration pour le consulter en toute sécurité."
+
+#: ainbae-receipt-upload-for-woocommerce.php:694
+msgid "Receipt uploaded successfully. Thank you! We will verify your payment shortly."
+msgstr "Reçu téléchargé avec succès. Merci ! Nous vérifierons votre paiement sous peu."
+
+#: ainbae-receipt-upload-for-woocommerce.php:712
+msgid "Bank Transfer Receipt"
+msgstr "Reçu de virement bancaire"
+
+#: ainbae-receipt-upload-for-woocommerce.php:716
+msgid "View Uploaded Receipt"
+msgstr "Voir le reçu téléchargé"
+
+#: ainbae-receipt-upload-for-woocommerce.php:717
+msgid "Uploaded:"
+msgstr "Téléchargé :"
+
+#: ainbae-receipt-upload-for-woocommerce.php:720
+msgid "No receipt uploaded yet."
+msgstr "Aucun reçu téléchargé pour le moment."
+
+#: ainbae-receipt-upload-for-woocommerce.php:736
+msgid "Invalid request."
+msgstr "Requête invalide."
+
+#: ainbae-receipt-upload-for-woocommerce.php:744
+msgid "Receipt not found."
+msgstr "Reçu introuvable."
+
+#: ainbae-receipt-upload-for-woocommerce.php:764
+msgid "Invalid file type."
+msgstr "Type de fichier invalide."
+
+#: ainbae-receipt-upload-for-woocommerce.php:772
+msgid "Could not read the receipt file."
+msgstr "Impossible de lire le fichier du reçu."
+

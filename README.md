@@ -241,7 +241,7 @@ languages/
 wp i18n make-pot . languages/ainbae-receipt-upload-for-woocommerce.pot --allow-root
 ```
 
-Community translations are also accepted via [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ainbae-receipt-upload-for-woocommerce/) once the plugin is listed.
+Community translations are also accepted via [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ainbae-receipt-upload-for-woocommerce/).
 
 ---
 
@@ -259,6 +259,45 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 - Path traversal protection via `realpath()` comparison
 - WooCommerce HPOS compatible via `FeaturesUtil::declare_compatibility()`
 - Hook-based integration — no core file modifications
+
+---
+
+## 📝 Changelog
+
+### 1.2.0
+
+- Fixed Setting Page WhatsApp number field prefix input styling
+- Added languages directory and translation files
+- Updated tested up to version to 10.8.1 (WooCommerce)
+- Updated stable tag to 1.2.0 for latest release
+
+### 1.0.3
+
+- Updated tested up to version to 7.0
+- Updated stable tag to 1.0.3 for latest release
+
+### 1.0.2
+
+- Moved private receipt storage from wp-content root into `wp-content/uploads/ainbae-receipt-upload-for-woocommerce/` using `wp_upload_dir()` per WordPress guidelines
+- Replaced `WP_CONTENT_DIR` constant with `wp_upload_dir()` for correct path resolution across all WordPress configurations
+- Replaced echo of binary file contents with `readfile()` to stream files without buffering or escaping concerns
+- Removed broken donate link from readme.txt
+- Updated readme FAQ to reflect new storage path and Nginx configuration instructions
+
+### 1.0.1
+
+- Security: replaced `file_put_contents()` with WP Filesystem API
+- Security: added explicit `is_uploaded_file()` check before `wp_handle_upload()`
+- Security: added `Content-Security-Policy` header when serving receipt files
+- Fix: asset version strings now use plugin version constant instead of hardcoded value
+- Fix: corrected `WC tested up to` version to reflect currently released WooCommerce
+- Improvement: added `Requires PHP` and `WC requires at least` headers
+- Improvement: uninstall routine now removes uploaded receipt files and order post-meta
+- Improvement: added Settings link to plugin row on the Plugins screen
+
+### 1.0.0
+
+- Initial release
 
 ---
 
@@ -296,35 +335,3 @@ If this plugin helps your store, please consider:
 - Giving it a ⭐ on [GitHub](https://github.com/ainbaetech/Ainbae-Receipt-Upload-for-WooCommerce)
 - Leaving a review on [WordPress.org](https://wordpress.org/plugins/ainbae-receipt-upload-for-woocommerce/)
 - Reporting bugs via [GitHub Issues](https://github.com/ainbaetech/Ainbae-Receipt-Upload-for-WooCommerce/issues)
-
----
-
-## 📝 Changelog
-
-### 1.0.3
-
-- Updated tested up to version to 7.0
-- Updated stable tag to 1.0.3 for latest release
-
-### 1.0.2
-
-- Moved private receipt storage from wp-content root into `wp-content/uploads/ainbae-receipt-upload-for-woocommerce/` using `wp_upload_dir()` per WordPress guidelines
-- Replaced `WP_CONTENT_DIR` constant with `wp_upload_dir()` for correct path resolution across all WordPress configurations
-- Replaced echo of binary file contents with `readfile()` to stream files without buffering or escaping concerns
-- Removed broken donate link from readme.txt
-- Updated readme FAQ to reflect new storage path and Nginx configuration instructions
-
-### 1.0.1
-
-- Security: replaced `file_put_contents()` with WP Filesystem API
-- Security: added explicit `is_uploaded_file()` check before `wp_handle_upload()`
-- Security: added `Content-Security-Policy` header when serving receipt files
-- Fix: asset version strings now use plugin version constant instead of hardcoded value
-- Fix: corrected `WC tested up to` version to reflect currently released WooCommerce
-- Improvement: added `Requires PHP` and `WC requires at least` headers
-- Improvement: uninstall routine now removes uploaded receipt files and order post-meta
-- Improvement: added Settings link to plugin row on the Plugins screen
-
-### 1.0.0
-
-- Initial release

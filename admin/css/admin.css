@@ -122,6 +122,9 @@
   color: #888;
   font-size: 14px;
 }
+.ainbae-bacs-input-prefix input {
+  padding-left: 18px;
+}
 
 /* Layout rules for the color row */
 .ainbae-bacs-colour-row {
