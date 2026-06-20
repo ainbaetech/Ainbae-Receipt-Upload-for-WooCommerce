@@ -47,7 +47,10 @@
 - 🚫 **Duplicate prevention** — one receipt per order, enforced server-side
 - ⚙️ Full **admin settings dashboard** with live preview
 - 🎨 **Fully customisable UI** — colours, labels, corner radius
-- 📱 **WhatsApp integration** — optional deep-link button for manual sharing
+- 📱 **WhatsApp integration** — optional deep-link button with **custom message templates** and dynamic variables
+- 🛒 **Require receipt at checkout** _(new in 2.0.0)_ — BACS-only workflow: upload modal appears before the order is created (default enabled for new installs, disabled for upgrades)
+- 🔍 **Reliable admin receipt detection** _(new in 2.0.0)_ — 5-priority fallback system prevents false "No receipt" messages
+- 🔧 **Automatic metadata recovery** _(new in 2.0.0)_ — rebuilds broken receipt meta if the file still exists on disk
 - 👨‍💼 **Admin order panel** — view receipts securely with one click
 - 🌍 **Translation ready** — i18n support with `.pot` file included
 - ✅ **HPOS compatible** — WooCommerce High-Performance Order Storage supported
@@ -106,12 +109,25 @@ Admins can view uploaded receipts securely from the WooCommerce order admin pane
 
 ## 💼 How It Works
 
+### Standard Workflow (default)
+
 1. Customer places an order and selects **Bank Transfer (BACS)** as the payment method.
 2. The receipt upload widget appears on both the **Thank You page** and the **Order Details page**.
 3. Customer uploads a **JPG, PNG, or PDF (max 5 MB)**. The file is stored **privately** outside the public media library, renamed to a UUID so the original filename is never exposed on disk.
 4. An order note is added automatically with the upload timestamp.
 5. The admin opens the order and clicks **View Uploaded Receipt** to view the file securely — the endpoint is nonce-authenticated and restricted to `manage_woocommerce` capability.
-6. Optionally, a **WhatsApp button** lets customers send their receipt directly to your WhatsApp number with a pre-filled order message.
+6. Optionally, a **WhatsApp button** lets customers send their receipt directly to your WhatsApp number with a pre-filled, customisable order message.
+
+### Require Receipt at Checkout _(new in 2.0.0)_
+
+When **Require Receipt Before Order Placement** is enabled in settings (default for new installations):
+
+1. Customer selects **Bank Transfer (BACS)** at checkout.
+2. Customer clicks **Place Order**.
+3. An **upload modal** appears (drag-and-drop, progress indicator, accessible).
+4. Customer uploads their receipt — file is validated and uploaded via AJAX.
+5. On success, the order is created and the receipt is **automatically attached**.
+6. Customer lands on the Thank You page with receipt already confirmed.
 
 ---
 
@@ -190,6 +206,16 @@ Admins can view uploaded receipts securely from the WooCommerce order admin pane
 </details>
 
 <details>
+  <summary><b>Can I customise the WhatsApp message?</b></summary>
+  <p>Yes (new in 2.0.0). Go to <strong>WooCommerce → Upload Receipt</strong> and find the <strong>WhatsApp Message Template</strong> textarea. Use these dynamic variables: <code>{order_number}</code>, <code>{order_total}</code>, <code>{customer_name}</code>, <code>{billing_email}</code>, <code>{billing_phone}</code>, <code>{site_name}</code>, <code>{currency}</code>, <code>{order_date}</code>. Leave blank to use the built-in default message.</p>
+</details>
+
+<details>
+  <summary><b>What is "Require Receipt Before Order Placement"?</b></summary>
+  <p>New in 2.0.0. When enabled, customers who select Direct Bank Transfer (BACS) must upload their receipt before the order is created. An upload modal appears when they click "Place Order". This setting is enabled by default for new installations (disabled for upgrades) and only affects BACS orders. If you prefer to let customers upload their receipt post-order on the Thank You page or Order Details page, you should turn this setting off.</p>
+</details>
+
+<details>
   <summary><b>Is the WhatsApp button required?</b></summary>
   <p>No. You can disable it entirely from the settings page under <strong>WooCommerce → Upload Receipt</strong>.</p>
 </details>
@@ -263,6 +289,18 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 ---
 
 ## 📝 Changelog
+
+### 2.0.0
+
+- **New**: Redesigned settings dashboard with a clean tabbed layout, modern styling, and real-time live preview
+- **New**: Custom WhatsApp message template with 8 dynamic variables (`{order_number}`, `{order_total}`, `{customer_name}`, `{billing_email}`, `{billing_phone}`, `{site_name}`, `{currency}`, `{order_date}`)
+- **New**: "Require Receipt Before Order Placement" — BACS-only checkout modal (enabled by default for new installations, disabled for upgrades)
+- **New**: Checkout upload modal with drag-and-drop, progress bar, error handling, and full accessibility support
+- **Fix**: Admin receipt detection now uses a 5-priority fallback system — eliminates false "No receipt uploaded yet" messages
+- **New**: Automatic metadata recovery — rebuilds broken receipt meta when the physical file still exists on disk
+- **New**: Centralized `AINBAE_BACS_VERSION` constant (`2.0.0`) used for all `wp_enqueue_*` calls
+- **New**: Debug logging for upload failures, recovery events, missing metadata, and invalid references (gated behind `WP_DEBUG_LOG`)
+- **Compatibility**: All existing settings, uploads, orders, and workflows remain unchanged
 
 ### 1.2.0
 

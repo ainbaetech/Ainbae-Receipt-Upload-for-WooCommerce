@@ -4,7 +4,7 @@ Tags: woocommerce, payment verification, receipt, bank transfer, payment receipt
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,9 @@ You get a clean, nonce-protected upload flow. Your customer gets instant confirm
 - Upload receipt from order page
 - Supports JPG, PNG, PDF
 - Admin can view receipts securely
-- WhatsApp integration
+- WhatsApp integration with customisable message templates
+- Require receipt before order placement (optional)
+- Improved admin receipt detection with automatic metadata recovery
 - Customizable UI
 
 = Who is this for? =
@@ -110,8 +112,17 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 5. The confirmation message displayed when order status is changed to processing by admin.
 6. The "View Uploaded Receipt" button in the WooCommerce order admin panel.
 
-
 == Changelog ==
+
+= 2.0.0 =
+- New: Custom WhatsApp message template with dynamic variable support ({order_number}, {order_total}, {customer_name}, {billing_email}, {billing_phone}, {site_name}, {currency}, {order_date})
+- New: "Require Receipt Before Order Placement" checkout feature — BACS customers must upload receipt before order is created (optional, disabled by default)
+- New: Checkout upload modal with drag-and-drop, progress bar, and accessibility support
+- Fix: Admin panel now correctly detects receipts using a 5-priority system — prevents false "No receipt uploaded yet" messages
+- New: Automatic metadata recovery system — rebuilds broken receipt meta if the physical file still exists
+- New: Centralized AINBAE_BACS_VERSION constant for all asset enqueue calls
+- New: Debug logging for upload failures, recovery events, and missing metadata (WP_DEBUG_LOG gated)
+- Backward compatible — all existing uploads, settings, and workflows continue to work unchanged
 
 = 1.2.0 =
 - Fixed Setting Page WhatsApp number field prefix input styling
@@ -141,8 +152,5 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 == Upgrade Notice ==
 
-= 1.2.0 =
-- Fixed Setting Page WhatsApp number field prefix input styling
-- Added languages directory and translation files
-- Updated tested up to version to 10.8.1 (WooCommerce)
-- Updated stable tag to 1.2.0 for latest release
+= 2.0.0 =
+Major feature release. Adds custom WhatsApp message templates, optional require-receipt-before-order checkout flow (BACS only), and fixes a receipt detection bug in WooCommerce admin. All existing settings, uploads, and orders remain fully compatible.

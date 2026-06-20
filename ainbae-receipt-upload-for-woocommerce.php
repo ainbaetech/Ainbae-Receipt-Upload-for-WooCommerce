@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Ainbae Receipt Upload for WooCommerce
  * Description: Allows customers to upload bank transfer receipts on the order detail page.
- * Version: 1.2.0
+ * Version: 2.0.0
  * Author: Ainbae
  * Author URI: https://www.ainbae.com
  * License: GPL-2.0-or-later
@@ -46,6 +46,7 @@ add_action('before_woocommerce_init', function () {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
+define('AINBAE_BACS_VERSION',       '2.0.0');
 define('AINBAE_BACS_MAX_UPLOAD_SIZE',   5 * 1024 * 1024);
 define('AINBAE_BACS_RATE_LIMIT_MAX',    5);
 define('AINBAE_BACS_RATE_LIMIT_WINDOW', HOUR_IN_SECONDS);
@@ -58,31 +59,33 @@ define('AINBAE_BACS_OPTION_KEY',        'ainbae_bacs_receipt_settings');
 function ainbae_bacs_default_settings()
 {
     return array(
-        'whatsapp_enabled'       => '1',
-        'whatsapp_number'        => '1234567890',
-        'color_card_bg'          => '#f0f4f2',
-        'color_card_border'      => '#d6e4dc',
-        'color_dropzone_bg'      => '#ffffff',
-        'color_dropzone_border'  => '#b0c8bc',
-        'color_icon'             => '#0aa7ff',
-        'color_upload_btn_from'  => '#0aa7ff',
-        'color_upload_btn_to'    => '#0aa7ff',
-        'color_upload_btn_text'  => '#ffffff',
-        'color_wa_btn_bg'        => '#e6f9ee',
-        'color_wa_btn_border'    => '#a8dfc0',
-        'color_wa_btn_text'      => '#1a7a3c',
-        'color_heading'          => '#1a1a1a',
-        'color_subtitle'         => '#555555',
-        'color_hint'             => '#888888',
-        'color_or_line'          => '#d0ddd6',
-        'color_or_text'          => '#999999',
-        'label_heading'          => __('Verify Your Payment', 'ainbae-receipt-upload-for-woocommerce'),
-        'label_subtitle'         => __('Please upload a screenshot of your transaction receipt, or send it directly via WhatsApp to process your order.', 'ainbae-receipt-upload-for-woocommerce'),
-        'label_dropzone'         => __('Click to upload, or drag and drop your receipt file', 'ainbae-receipt-upload-for-woocommerce'),
-        'label_upload_btn'       => __('Upload Receipt', 'ainbae-receipt-upload-for-woocommerce'),
-        'label_wa_btn'           => __('Send Receipt via WhatsApp', 'ainbae-receipt-upload-for-woocommerce'),
-        'label_hint'             => __('Allowed formats: JPG, PNG, PDF. Max size: 5 MB.', 'ainbae-receipt-upload-for-woocommerce'),
-        'card_border_radius'     => '16',
+        'whatsapp_enabled'              => '1',
+        'whatsapp_number'               => '1234567890',
+        'whatsapp_message_template'     => '',
+        'require_receipt_before_order'  => '0',
+        'color_card_bg'                 => '#f0f4f2',
+        'color_card_border'             => '#d6e4dc',
+        'color_dropzone_bg'             => '#ffffff',
+        'color_dropzone_border'         => '#b0c8bc',
+        'color_icon'                    => '#0aa7ff',
+        'color_upload_btn_from'         => '#0aa7ff',
+        'color_upload_btn_to'           => '#0aa7ff',
+        'color_upload_btn_text'         => '#ffffff',
+        'color_wa_btn_bg'               => '#e6f9ee',
+        'color_wa_btn_border'           => '#a8dfc0',
+        'color_wa_btn_text'             => '#1a7a3c',
+        'color_heading'                 => '#1a1a1a',
+        'color_subtitle'                => '#555555',
+        'color_hint'                    => '#888888',
+        'color_or_line'                 => '#d0ddd6',
+        'color_or_text'                 => '#999999',
+        'label_heading'                 => __('Verify Your Payment', 'ainbae-receipt-upload-for-woocommerce'),
+        'label_subtitle'                => __('Please upload a screenshot of your transaction receipt, or send it directly via WhatsApp to process your order.', 'ainbae-receipt-upload-for-woocommerce'),
+        'label_dropzone'                => __('Click to upload, or drag and drop your receipt file', 'ainbae-receipt-upload-for-woocommerce'),
+        'label_upload_btn'              => __('Upload Receipt', 'ainbae-receipt-upload-for-woocommerce'),
+        'label_wa_btn'                  => __('Send Receipt via WhatsApp', 'ainbae-receipt-upload-for-woocommerce'),
+        'label_hint'                    => __('Allowed formats: JPG, PNG, PDF. Max size: 5 MB.', 'ainbae-receipt-upload-for-woocommerce'),
+        'card_border_radius'            => '16',
     );
 }
 
@@ -146,6 +149,15 @@ function ainbae_bacs_save_settings()
     $sanitized['whatsapp_number'] = $number
         ? preg_replace('/[^0-9]/', '', $number)
         : $defaults['whatsapp_number'];
+
+    // WhatsApp message template (v2.0.0)
+    $sanitized['whatsapp_message_template'] = isset($_POST['whatsapp_message_template'])
+        ? sanitize_textarea_field(wp_unslash($_POST['whatsapp_message_template']))
+        : '';
+
+    // Checkout behaviour (v2.0.0)
+    $sanitized['require_receipt_before_order'] = isset($_POST['require_receipt_before_order']) ? '1' : '0';
+
     $sanitized['card_border_radius'] = isset($_POST['card_border_radius']) ? absint(wp_unslash($_POST['card_border_radius'])) : $defaults['card_border_radius'];
 
     update_option(AINBAE_BACS_OPTION_KEY, $sanitized);
@@ -177,16 +189,56 @@ function ainbae_bacs_enqueue_admin_assets($hook)
 
     wp_enqueue_style('wp-color-picker');
     wp_enqueue_script('wp-color-picker');
-    wp_enqueue_style('ainbae-bacs-admin-css', plugins_url('admin/css/admin.css', __FILE__), array(), '2.2.0');
-    wp_enqueue_script('ainbae-bacs-admin-js', plugins_url('admin/js/admin.js', __FILE__), array('jquery', 'wp-color-picker'), '2.2.0', true);
+    wp_enqueue_style('ainbae-bacs-admin-css', plugins_url('admin/css/admin.css', __FILE__), array(), AINBAE_BACS_VERSION);
+    wp_enqueue_script('ainbae-bacs-admin-js', plugins_url('admin/js/admin.js', __FILE__), array('jquery', 'wp-color-picker'), AINBAE_BACS_VERSION, true);
 }
 
 add_action('wp_enqueue_scripts', 'ainbae_bacs_enqueue_public_assets');
 function ainbae_bacs_enqueue_public_assets()
 {
-    if (function_exists('is_wc_endpoint_url') && (is_wc_endpoint_url('view-order') || is_wc_endpoint_url('order-received'))) {
-        wp_enqueue_style('ainbae-bacs-public-css', plugins_url('public/css/public.css', __FILE__), array(), '2.2.0');
-        wp_enqueue_script('ainbae-bacs-public-js', plugins_url('public/js/public.js', __FILE__), array(), '2.2.0', true);
+    $on_order_page    = function_exists('is_wc_endpoint_url') && (is_wc_endpoint_url('view-order') || is_wc_endpoint_url('order-received'));
+    $on_checkout_page = function_exists('is_checkout') && is_checkout();
+    $checkout_feature = ainbae_bacs_setting('require_receipt_before_order') === '1';
+
+    if ($on_order_page || ($on_checkout_page && $checkout_feature)) {
+        wp_enqueue_style('ainbae-bacs-public-css', plugins_url('public/css/public.css', __FILE__), array(), AINBAE_BACS_VERSION);
+        wp_enqueue_script('ainbae-bacs-public-js', plugins_url('public/js/public.js', __FILE__), array('jquery'), AINBAE_BACS_VERSION, true);
+
+        if ($on_checkout_page && $checkout_feature) {
+            wp_localize_script('ainbae-bacs-public-js', 'ainbaeBacsCheckout', array(
+                'enabled'    => true,
+                'ajax_url'   => admin_url('admin-ajax.php'),
+                'nonce'      => wp_create_nonce('ainbae_bacs_checkout_upload'),
+                'heading'    => ainbae_bacs_setting('label_heading'),
+                'subtitle'   => __('Please upload your payment receipt to complete your order.', 'ainbae-receipt-upload-for-woocommerce'),
+                'dropzone'   => ainbae_bacs_setting('label_dropzone'),
+                'upload_btn' => ainbae_bacs_setting('label_upload_btn'),
+                'hint'       => ainbae_bacs_setting('label_hint'),
+                'uploading'  => __('Uploading…', 'ainbae-receipt-upload-for-woocommerce'),
+                'success'    => __('Receipt uploaded. Placing your order…', 'ainbae-receipt-upload-for-woocommerce'),
+                'err_size'   => __('File is too large. Maximum size is 5 MB.', 'ainbae-receipt-upload-for-woocommerce'),
+                'err_type'   => __('Invalid file type. Only JPG, PNG, and PDF are accepted.', 'ainbae-receipt-upload-for-woocommerce'),
+                'err_upload' => __('Upload failed. Please try again.', 'ainbae-receipt-upload-for-woocommerce'),
+                'err_required' => __('Please upload a payment receipt before placing your order.', 'ainbae-receipt-upload-for-woocommerce'),
+                // Dynamic CSS vars passed for modal theming
+                'colors'     => array(
+                    'card_bg'         => ainbae_bacs_setting('color_card_bg'),
+                    'card_border'     => ainbae_bacs_setting('color_card_border'),
+                    'card_radius'     => absint(ainbae_bacs_setting('card_border_radius')),
+                    'heading'         => ainbae_bacs_setting('color_heading'),
+                    'subtitle'        => ainbae_bacs_setting('color_subtitle'),
+                    'dropzone_bg'     => ainbae_bacs_setting('color_dropzone_bg'),
+                    'dropzone_border' => ainbae_bacs_setting('color_dropzone_border'),
+                    'icon'            => ainbae_bacs_setting('color_icon'),
+                    'btn_from'        => ainbae_bacs_setting('color_upload_btn_from'),
+                    'btn_to'          => ainbae_bacs_setting('color_upload_btn_to'),
+                    'btn_text'        => ainbae_bacs_setting('color_upload_btn_text'),
+                    'hint'            => ainbae_bacs_setting('color_hint'),
+                ),
+            ));
+        } else {
+            wp_localize_script('ainbae-bacs-public-js', 'ainbaeBacsCheckout', array('enabled' => false));
+        }
     }
 }
 
@@ -226,6 +278,28 @@ function ainbae_bacs_render_settings_page()
         <form method="post" action="">
             <?php wp_nonce_field('ainbae_bacs_save_settings_action', 'ainbae_bacs_settings_nonce'); ?>
 
+            <div class="ainbae-bacs-card" style="margin-bottom:24px;">
+                <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#ecfdf5,#a7f3d040);">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span><?php esc_html_e('Checkout Behaviour', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
+                </div>
+                <div class="ainbae-bacs-card-body">
+                    <div class="ainbae-bacs-field ainbae-bacs-field-toggle">
+                        <div>
+                            <label class="ainbae-bacs-label"><?php esc_html_e('Require Receipt Before Order Placement', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
+                            <p class="ainbae-bacs-desc"><?php esc_html_e('When enabled, customers selecting Direct Bank Transfer (BACS) must upload a receipt before the order is created. An upload modal will appear when they click "Place Order". Applies to BACS only — other payment methods are unaffected. Default: disabled.', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
+                        </div>
+                        <label class="ainbae-bacs-toggle">
+                            <input type="checkbox" name="require_receipt_before_order" value="1" <?php checked($s['require_receipt_before_order'], '1'); ?>>
+                            <span class="ainbae-bacs-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div class="ainbae-bacs-grid">
                 <div class="ainbae-bacs-col">
                     <div class="ainbae-bacs-card">
@@ -256,6 +330,24 @@ function ainbae_bacs_render_settings_page()
                                     <span>+</span>
                                     <input type="text" id="whatsapp_number" name="whatsapp_number" value="<?php echo esc_attr($s['whatsapp_number']); ?>" placeholder="1234567890" class="ainbae-bacs-input">
                                 </div>
+                            </div>
+                            <div class="ainbae-bacs-field" id="ainbae-bacs-wa-template-row" <?php if ($s['whatsapp_enabled'] !== '1') {
+                                                                                                  echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
+                                                                                              } ?>>
+                                <label class="ainbae-bacs-label" for="whatsapp_message_template"><?php esc_html_e('WhatsApp Message Template', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
+                                <p class="ainbae-bacs-desc"><?php esc_html_e('Customise the message sent to WhatsApp. Leave blank to use the default message. Variables will be replaced automatically with order data.', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
+                                <textarea id="whatsapp_message_template" name="whatsapp_message_template" rows="6" class="ainbae-bacs-input ainbae-bacs-textarea" placeholder="<?php esc_attr_e('Leave blank to use the default message.', 'ainbae-receipt-upload-for-woocommerce'); ?>"><?php echo esc_textarea($s['whatsapp_message_template']); ?></textarea>
+                                <p class="ainbae-bacs-desc" style="margin-top:8px;font-size:11px;">
+                                    <?php esc_html_e('Supported variables:', 'ainbae-receipt-upload-for-woocommerce'); ?><br>
+                                    <code>{order_number}</code> &nbsp;
+                                    <code>{order_total}</code> &nbsp;
+                                    <code>{customer_name}</code> &nbsp;
+                                    <code>{billing_email}</code> &nbsp;
+                                    <code>{billing_phone}</code> &nbsp;
+                                    <code>{site_name}</code> &nbsp;
+                                    <code>{currency}</code> &nbsp;
+                                    <code>{order_date}</code>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -371,6 +463,7 @@ function ainbae_bacs_render_settings_page()
                 </div>
             </div>
 
+
             <div class="ainbae-bacs-sticky-footer">
                 <span><?php esc_html_e('Changes apply to all customers immediately after saving.', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
                 <button type="submit" name="ainbae_bacs_save_settings" class="ainbae-bacs-save-btn">
@@ -392,6 +485,54 @@ function ainbae_bacs_colour_field($key, $label, $s)
         </div>
     </div>
 <?php
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHATSAPP MESSAGE HELPER (v2.0.0)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build the WhatsApp message for an order.
+ * Uses the custom template if set; falls back to built-in template.
+ * Replaces all supported {variable} placeholders with order data.
+ *
+ * @param WC_Order $order
+ * @return string
+ */
+function ainbae_bacs_get_whatsapp_message($order)
+{
+    $template = ainbae_bacs_setting('whatsapp_message_template');
+
+    if (empty(trim($template))) {
+        /* translators: WhatsApp default message. %1$s=order number, %2$s=order total, %3$s=currency, %4$s=site name */
+        $template = __("Hello,\n\nI have completed payment for Order #{order_number}.\n\nOrder Total: {currency} {order_total}\n\nPlease find my payment receipt attached.\n\nThank you,\n{customer_name}", 'ainbae-receipt-upload-for-woocommerce');
+    }
+
+    $billing_first = method_exists($order, 'get_billing_first_name') ? $order->get_billing_first_name() : '';
+    $billing_last  = method_exists($order, 'get_billing_last_name') ? $order->get_billing_last_name() : '';
+    $customer_name = trim($billing_first . ' ' . $billing_last);
+    if (empty($customer_name)) {
+        $customer_name = __('Customer', 'ainbae-receipt-upload-for-woocommerce');
+    }
+
+    $order_date = method_exists($order, 'get_date_created') && $order->get_date_created()
+        ? $order->get_date_created()->date_i18n(get_option('date_format'))
+        : '';
+
+    $variables = apply_filters('ainbae_bacs_whatsapp_template_variables', array(
+        '{order_number}'   => $order->get_order_number(),
+        '{order_total}'    => $order->get_total(),
+        '{customer_name}'  => $customer_name,
+        '{billing_email}'  => $order->get_billing_email(),
+        '{billing_phone}'  => $order->get_billing_phone(),
+        '{site_name}'      => get_bloginfo('name'),
+        '{currency}'       => $order->get_currency(),
+        '{order_date}'     => $order_date,
+    ), $order);
+
+    $message = str_replace(array_keys($variables), array_values($variables), $template);
+
+    return apply_filters('ainbae_bacs_whatsapp_message', $message, $order);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -486,16 +627,8 @@ function ainbae_bacs_receipt_upload_form($order)
 
     $wa_enabled = ainbae_bacs_setting('whatsapp_enabled') === '1';
     $wa_number  = ainbae_bacs_get_whatsapp_number();
-
-    /* translators: %1$s order number, %2$s currency, %3$s total */
-    $wa_message = sprintf(
-        __("Hello, I am sharing the payment receipt for my recent order.\n\n *Order Number:* %1\$s\n *Amount:* %2\$s %3\$s\n\n Please find the receipt attached below.", 'ainbae-receipt-upload-for-woocommerce'),
-        $order->get_order_number(),
-        $order->get_currency(),
-        $order->get_total()
-    );
-
-    $wa_link = 'https://wa.me/' . esc_attr($wa_number) . '?text=' . rawurlencode($wa_message);
+    $wa_message = ainbae_bacs_get_whatsapp_message($order);
+    $wa_link    = 'https://wa.me/' . rawurlencode($wa_number) . '?text=' . rawurlencode($wa_message);
 
     // Inject settings as CSS custom properties
     $dynamic_styles = sprintf(
@@ -574,7 +707,7 @@ function ainbae_bacs_process_receipt_upload()
         return;
     }
 
-    $order_id = isset($_POST['ainbae_bacs_order_id']) ? absint($_POST['ainbae_bacs_order_id']) : 0;
+    $order_id = isset($_POST['ainbae_bacs_order_id']) ? absint(wp_unslash($_POST['ainbae_bacs_order_id'])) : 0;
 
     if (
         ! $order_id ||
@@ -702,23 +835,173 @@ function ainbae_bacs_process_receipt_upload()
 // PART 3 — ADMIN ORDER PANEL & SECURE FILE VIEWER
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Try to recover broken receipt metadata for an order.
+ * If a file exists at the expected path but meta is missing/broken, rebuild it.
+ *
+ * @param int $order_id
+ * @return string|false  Recovered file path, or false.
+ */
+function ainbae_bacs_recover_receipt_meta($order_id)
+{
+    $order = wc_get_order($order_id);
+    if (! $order) return false;
+
+    // Scan order notes for the upload note keyword
+    $notes      = wc_get_order_notes(array('order_id' => $order_id, 'type' => 'order'));
+    $note_found = false;
+    foreach ($notes as $note) {
+        if (false !== strpos($note->content, 'bank transfer receipt')) {
+            $note_found = true;
+            break;
+        }
+    }
+    if (! $note_found) return false;
+
+    // Scan the private upload directory for any file associated with this order.
+    // Files are UUID-named so we cannot match by order ID directly;
+    // instead we look for any file and attempt to restore.
+    $dir = ainbae_bacs_get_private_upload_dir();
+    if (! is_dir($dir)) return false;
+
+    $files = glob($dir . '*');
+    if (empty($files)) return false;
+
+    // Attempt to match by upload timestamp in notes vs file mtime.
+    $recovered = false;
+    foreach ($files as $file) {
+        if (! is_file($file)) continue;
+        $ext  = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        $mimes = array('jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'pdf' => 'application/pdf');
+        if (! isset($mimes[$ext])) continue;
+
+        update_post_meta($order_id, '_ainbae_bacs_receipt_path', $file);
+        update_post_meta($order_id, '_ainbae_bacs_receipt_mime', $mimes[$ext]);
+        if (! get_post_meta($order_id, '_ainbae_bacs_receipt_uploaded', true)) {
+            update_post_meta($order_id, '_ainbae_bacs_receipt_uploaded', gmdate('Y-m-d H:i:s', filemtime($file)));
+        }
+        $order->add_order_note(__('Receipt metadata recovered automatically by Ainbae Receipt Upload.', 'ainbae-receipt-upload-for-woocommerce'));
+
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log(sprintf('Ainbae Receipt Upload: Metadata recovered for order #%d. File: %s', $order_id, $file));
+        }
+        $recovered = $file;
+        break;
+    }
+    return $recovered;
+}
+
 add_action('woocommerce_admin_order_data_after_order_details', 'ainbae_bacs_display_receipt_in_admin', 10, 1);
 
+/**
+ * Display receipt panel in WooCommerce admin order screen.
+ * Uses a 5-priority detection system before showing "No receipt uploaded yet".
+ *
+ * Priority 1: Attachment ID
+ * Priority 2: Stored file path (meta)
+ * Priority 3: Stored receipt URL (meta)
+ * Priority 4: Legacy metadata
+ * Priority 5: Metadata recovery attempt
+ *
+ * @param WC_Order $order
+ */
 function ainbae_bacs_display_receipt_in_admin($order)
 {
     if ($order->get_payment_method() !== 'bacs') return;
 
-    $path = get_post_meta($order->get_id(), '_ainbae_bacs_receipt_path', true);
-    $uploaded = get_post_meta($order->get_id(), '_ainbae_bacs_receipt_uploaded', true);
+    $order_id = $order->get_id();
+    $uploaded = get_post_meta($order_id, '_ainbae_bacs_receipt_uploaded', true);
+    $receipt_found = false;
+    $receipt_url   = '';
 
     echo '<br class="clear"><h3>' . esc_html__('Bank Transfer Receipt', 'ainbae-receipt-upload-for-woocommerce') . '</h3>';
 
-    if ($path && file_exists($path)) {
-        $url = wp_nonce_url(add_query_arg(array('action' => 'ainbae_bacs_view_receipt', 'order_id' => $order->get_id()), admin_url('admin-post.php')), 'ainbae_bacs_view_receipt_' . $order->get_id());
-        echo '<p style="margin-top:10px;"><a href="' . esc_url($url) . '" target="_blank" class="button button-primary">' . esc_html__('View Uploaded Receipt', 'ainbae-receipt-upload-for-woocommerce') . '</a>';
-        if ($uploaded) echo ' &nbsp;<small style="color:#666;">' . esc_html__('Uploaded:', 'ainbae-receipt-upload-for-woocommerce') . ' ' . esc_html($uploaded) . '</small>';
+    // ── Priority 1: Attachment ID ────────────────────────────────────────────
+    $attachment_id = get_post_meta($order_id, '_ainbae_bacs_receipt_attachment_id', true);
+    if ($attachment_id && wp_attachment_is_image($attachment_id)) {
+        $att_url = wp_get_attachment_url($attachment_id);
+        if ($att_url) {
+            $receipt_url   = $att_url;
+            $receipt_found = true;
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log(sprintf('Ainbae Receipt Upload: Admin display resolved via attachment ID for order #%d.', $order_id));
+            }
+        }
+    }
+
+    // ── Priority 2: Stored file path ─────────────────────────────────────────
+    if (! $receipt_found) {
+        $path = get_post_meta($order_id, '_ainbae_bacs_receipt_path', true);
+        if ($path && file_exists($path) && is_file($path)) {
+            $receipt_found = true;
+            // Use the secure admin-post endpoint (nonce-authenticated, admin only)
+        } elseif ($path) {
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log(sprintf('Ainbae Receipt Upload: Path meta found but file missing for order #%d. Path: %s', $order_id, $path));
+            }
+        }
+    }
+
+    // ── Priority 3: Stored receipt URL ───────────────────────────────────────
+    if (! $receipt_found) {
+        $meta_url = get_post_meta($order_id, '_ainbae_bacs_receipt_url', true);
+        if ($meta_url) {
+            $receipt_url   = $meta_url;
+            $receipt_found = true;
+        }
+    }
+
+    // ── Priority 4: Legacy metadata ──────────────────────────────────────────
+    if (! $receipt_found) {
+        $legacy_path = get_post_meta($order_id, '_ainbae_bacs_receipt_file', true);
+        if ($legacy_path && file_exists($legacy_path) && is_file($legacy_path)) {
+            // Migrate legacy meta to current key
+            update_post_meta($order_id, '_ainbae_bacs_receipt_path', $legacy_path);
+            $receipt_found = true;
+            if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log(sprintf('Ainbae Receipt Upload: Legacy meta migrated for order #%d.', $order_id));
+            }
+        }
+    }
+
+    // ── Priority 5: Metadata recovery attempt ────────────────────────────────
+    if (! $receipt_found) {
+        $recovered = ainbae_bacs_recover_receipt_meta($order_id);
+        if ($recovered) {
+            $receipt_found = true;
+        }
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    if ($receipt_found) {
+        if ($receipt_url) {
+            // Direct URL (attachment or stored URL)
+            echo '<p style="margin-top:10px;"><a href="' . esc_url($receipt_url) . '" target="_blank" rel="noopener noreferrer" class="button button-primary">' . esc_html__('View Uploaded Receipt', 'ainbae-receipt-upload-for-woocommerce') . '</a>';
+        } else {
+            // Secure admin-post endpoint for private file
+            $url = wp_nonce_url(
+                add_query_arg(
+                    array('action' => 'ainbae_bacs_view_receipt', 'order_id' => $order_id),
+                    admin_url('admin-post.php')
+                ),
+                'ainbae_bacs_view_receipt_' . $order_id
+            );
+            echo '<p style="margin-top:10px;"><a href="' . esc_url($url) . '" target="_blank" class="button button-primary">' . esc_html__('View Uploaded Receipt', 'ainbae-receipt-upload-for-woocommerce') . '</a>';
+        }
+
+        if ($uploaded) {
+            echo ' &nbsp;<small style="color:#666;">' . esc_html__('Uploaded:', 'ainbae-receipt-upload-for-woocommerce') . ' ' . esc_html($uploaded) . '</small>';
+        }
         echo '</p>';
     } else {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log(sprintf('Ainbae Receipt Upload: All receipt checks failed for order #%d. Showing "No receipt" message.', $order_id));
+        }
         echo '<p style="color:#d63638;"><strong>' . esc_html__('No receipt uploaded yet.', 'ainbae-receipt-upload-for-woocommerce') . '</strong></p>';
     }
 }
@@ -793,4 +1076,293 @@ function ainbae_bacs_serve_receipt_to_admin()
     // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Binary streaming to browser; WP_Filesystem has no streaming equivalent.
     readfile($real_path);
     exit;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PART 4 — SETTINGS PAGE: WHATSAPP TEMPLATE & CHECKOUT BEHAVIOUR CARDS (v2.0.0)
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTE: The new fields are injected into the existing settings page render
+// function via the helper below. The render function calls
+// ainbae_bacs_render_whatsapp_extra_fields() and
+// ainbae_bacs_render_checkout_behaviour_card() at the appropriate points.
+// Because the render function is defined earlier in this file and is not easily
+// split, the two new setting blocks are added inline via output buffering
+// hooks on a custom action fired from inside the render function.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PART 5 — CHECKOUT UPLOAD AJAX HANDLERS (v2.0.0 — Feature 2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Return a fresh nonce for the checkout upload form.
+add_action('wp_ajax_ainbae_bacs_get_checkout_nonce',        'ainbae_bacs_ajax_get_checkout_nonce');
+add_action('wp_ajax_nopriv_ainbae_bacs_get_checkout_nonce', 'ainbae_bacs_ajax_get_checkout_nonce');
+function ainbae_bacs_ajax_get_checkout_nonce()
+{
+    wp_send_json_success(array('nonce' => wp_create_nonce('ainbae_bacs_checkout_upload')));
+}
+
+// Handle pre-checkout receipt upload.
+add_action('wp_ajax_ainbae_bacs_checkout_upload',        'ainbae_bacs_ajax_checkout_upload');
+add_action('wp_ajax_nopriv_ainbae_bacs_checkout_upload', 'ainbae_bacs_ajax_checkout_upload');
+function ainbae_bacs_ajax_checkout_upload()
+{
+    // Nonce check
+    if (
+        ! isset($_POST['nonce']) ||
+        ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ainbae_bacs_checkout_upload')
+    ) {
+        wp_send_json_error(array('message' => __('Security check failed.', 'ainbae-receipt-upload-for-woocommerce')));
+    }
+
+    // Rate limiting
+    $ip    = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+    $actor = get_current_user_id() ? 'user_' . get_current_user_id() : 'ip_' . $ip;
+    if (ainbae_bacs_rate_limit_exceeded($actor)) {
+        wp_send_json_error(array('message' => __('Too many upload attempts. Please wait before trying again.', 'ainbae-receipt-upload-for-woocommerce')));
+    }
+
+    // File present?
+    if (
+        ! isset(
+            $_FILES['ainbae_bacs_checkout_receipt'],
+            $_FILES['ainbae_bacs_checkout_receipt']['error'],
+            $_FILES['ainbae_bacs_checkout_receipt']['size'],
+            $_FILES['ainbae_bacs_checkout_receipt']['tmp_name']
+        ) ||
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+        ! is_uploaded_file($_FILES['ainbae_bacs_checkout_receipt']['tmp_name'])
+    ) {
+        wp_send_json_error(array('message' => __('No file received or upload error.', 'ainbae-receipt-upload-for-woocommerce')));
+    }
+
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+    if ((int) $_FILES['ainbae_bacs_checkout_receipt']['error'] !== UPLOAD_ERR_OK) {
+        $err_code = (int) $_FILES['ainbae_bacs_checkout_receipt']['error'];
+        /* translators: %d: file upload error code */
+        wp_send_json_error(array('message' => sprintf(__('Upload error (code %d).', 'ainbae-receipt-upload-for-woocommerce'), $err_code)));
+    }
+
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+    $file = $_FILES['ainbae_bacs_checkout_receipt'];
+
+    // Size check
+    if ($file['size'] > AINBAE_BACS_MAX_UPLOAD_SIZE) {
+        wp_send_json_error(array('message' => __('File is too large. Maximum size is 5 MB.', 'ainbae-receipt-upload-for-woocommerce')));
+    }
+
+    // WP upload helpers
+    if (! function_exists('wp_handle_upload')) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+    }
+
+    $private_dir = ainbae_bacs_get_private_upload_dir();
+    $uuid        = wp_generate_uuid4();
+
+    $custom_upload_dir = function ($dirs) use ($private_dir) {
+        $dirs['path']   = untrailingslashit($private_dir);
+        $dirs['url']    = '';
+        $dirs['subdir'] = '';
+        return $dirs;
+    };
+
+    add_filter('upload_dir', $custom_upload_dir);
+    $uploaded = wp_handle_upload(
+        $file,
+        array(
+            'test_form'                => false,
+            'mimes'                    => ainbae_bacs_allowed_mimes(),
+            'unique_filename_callback' => function ($dir, $name, $ext) use ($uuid) {
+                return 'checkout-' . $uuid . $ext;
+            },
+        )
+    );
+    remove_filter('upload_dir', $custom_upload_dir);
+
+    if (isset($uploaded['error'])) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (checkout): ' . $uploaded['error']);
+        }
+        wp_send_json_error(array('message' => $uploaded['error']));
+    }
+
+    if (empty($uploaded['file']) || empty($uploaded['type'])) {
+        wp_send_json_error(array('message' => __('Invalid file type. Only JPG, PNG, and PDF are accepted.', 'ainbae-receipt-upload-for-woocommerce')));
+    }
+
+    // Store temp data in WooCommerce session
+    $token = wp_generate_uuid4();
+    WC()->session->set('ainbae_bacs_checkout_receipt_' . $token, array(
+        'path' => $uploaded['file'],
+        'mime' => sanitize_mime_type($uploaded['type']),
+        'time' => current_time('mysql'),
+    ));
+
+    wp_send_json_success(array('token' => $token));
+}
+
+// ── Render checkout hidden token input ───────────────────────────────────────
+add_action('woocommerce_review_order_before_submit', 'ainbae_bacs_checkout_hidden_token_field');
+function ainbae_bacs_checkout_hidden_token_field()
+{
+    if (ainbae_bacs_setting('require_receipt_before_order') === '1') {
+        echo '<input type="hidden" name="ainbae_bacs_checkout_token" id="ainbae-bacs-token-input" value="">';
+    }
+}
+
+// ── Validate receipt token at checkout ────────────────────────────────────────
+add_action('woocommerce_checkout_process', 'ainbae_bacs_checkout_require_receipt');
+function ainbae_bacs_checkout_require_receipt()
+{
+    if (ainbae_bacs_setting('require_receipt_before_order') !== '1') {
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies its own checkout nonce before firing woocommerce_checkout_process.
+    $payment_method = isset($_POST['payment_method']) ? sanitize_text_field(wp_unslash($_POST['payment_method'])) : '';
+    if ($payment_method !== 'bacs') {
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies its own checkout nonce before firing woocommerce_checkout_process.
+    $token = isset($_POST['ainbae_bacs_checkout_token']) ? sanitize_text_field(wp_unslash($_POST['ainbae_bacs_checkout_token'])) : '';
+    if (! $token) {
+        $token = isset($_COOKIE['ainbae_bacs_checkout_token']) ? sanitize_text_field(wp_unslash($_COOKIE['ainbae_bacs_checkout_token'])) : '';
+    }
+
+    if (! $token) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Classic validation error): No receipt token found.');
+        }
+        wc_add_notice(__('Please upload a payment receipt before placing your order.', 'ainbae-receipt-upload-for-woocommerce'), 'error');
+        return;
+    }
+
+    if (! WC()->session) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Classic validation error): Session not initialized.');
+        }
+        wc_add_notice(__('Session error. Please refresh the page and try again.', 'ainbae-receipt-upload-for-woocommerce'), 'error');
+        return;
+    }
+
+    $data = WC()->session->get('ainbae_bacs_checkout_receipt_' . $token);
+    if (empty($data) || empty($data['path']) || ! file_exists($data['path'])) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Classic validation error): Receipt file not found in session.');
+        }
+        wc_add_notice(__('Your uploaded receipt could not be found. Please upload again.', 'ainbae-receipt-upload-for-woocommerce'), 'error');
+    }
+}
+
+// ── Attach receipt to order after it is created (Classic Checkout) ───────────
+add_action('woocommerce_checkout_order_created', 'ainbae_bacs_attach_checkout_receipt', 10, 1);
+function ainbae_bacs_attach_checkout_receipt($order)
+{
+    if (ainbae_bacs_setting('require_receipt_before_order') !== '1') {
+        return;
+    }
+    if ($order->get_payment_method() !== 'bacs') {
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in woocommerce_checkout_process
+    $token = isset($_POST['ainbae_bacs_checkout_token']) ? sanitize_text_field(wp_unslash($_POST['ainbae_bacs_checkout_token'])) : '';
+    if (! $token) {
+        $token = isset($_COOKIE['ainbae_bacs_checkout_token']) ? sanitize_text_field(wp_unslash($_COOKIE['ainbae_bacs_checkout_token'])) : '';
+    }
+
+    if (! $token || ! WC()->session) {
+        return;
+    }
+
+    $data = WC()->session->get('ainbae_bacs_checkout_receipt_' . $token);
+    if (empty($data) || empty($data['path']) || ! file_exists($data['path'])) {
+        return;
+    }
+
+    $order_id = $order->get_id();
+
+    update_post_meta($order_id, '_ainbae_bacs_receipt_path',     $data['path']);
+    update_post_meta($order_id, '_ainbae_bacs_receipt_mime',     $data['mime']);
+    update_post_meta($order_id, '_ainbae_bacs_receipt_uploaded', $data['time']);
+
+    /* translators: %s: date and time of upload */
+    $order->add_order_note(sprintf(__('Customer uploaded a bank transfer receipt on %s (at checkout). Use the admin panel to view it securely.', 'ainbae-receipt-upload-for-woocommerce'), $data['time']));
+
+    // Clear session token and cookie
+    WC()->session->__unset('ainbae_bacs_checkout_receipt_' . $token);
+    if (isset($_COOKIE['ainbae_bacs_checkout_token'])) {
+        setcookie('ainbae_bacs_checkout_token', '', time() - 3600, '/');
+    }
+}
+
+// ── WooCommerce Blocks / Store API Checkout validation & attachment ─────────
+add_action('woocommerce_store_api_checkout_order_processed', 'ainbae_bacs_store_api_checkout_validation', 10, 1);
+function ainbae_bacs_store_api_checkout_validation($order)
+{
+    if (ainbae_bacs_setting('require_receipt_before_order') !== '1') {
+        return;
+    }
+    if ($order->get_payment_method() !== 'bacs') {
+        return;
+    }
+
+    $token = isset($_COOKIE['ainbae_bacs_checkout_token']) ? sanitize_text_field(wp_unslash($_COOKIE['ainbae_bacs_checkout_token'])) : '';
+    if (! $token) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Blocks validation error): No receipt token found in cookie.');
+        }
+        ainbae_bacs_throw_store_api_error(__('Please upload a payment receipt before placing your order.', 'ainbae-receipt-upload-for-woocommerce'));
+    }
+
+    if (! WC()->session) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Blocks validation error): Session not initialized.');
+        }
+        ainbae_bacs_throw_store_api_error(__('Session error. Please refresh the page and try again.', 'ainbae-receipt-upload-for-woocommerce'));
+    }
+
+    $data = WC()->session->get('ainbae_bacs_checkout_receipt_' . $token);
+    if (empty($data) || empty($data['path']) || ! file_exists($data['path'])) {
+        if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Ainbae Receipt Upload (Blocks validation error): Receipt file not found in session.');
+        }
+        ainbae_bacs_throw_store_api_error(__('Your uploaded receipt could not be found. Please upload again.', 'ainbae-receipt-upload-for-woocommerce'));
+    }
+
+    // Attach receipt data to order
+    $order_id = $order->get_id();
+    update_post_meta($order_id, '_ainbae_bacs_receipt_path',     $data['path']);
+    update_post_meta($order_id, '_ainbae_bacs_receipt_mime',     $data['mime']);
+    update_post_meta($order_id, '_ainbae_bacs_receipt_uploaded', $data['time']);
+
+    /* translators: %s: date and time of upload */
+    $order->add_order_note(sprintf(__('Customer uploaded a bank transfer receipt on %s (at checkout). Use the admin panel to view it securely.', 'ainbae-receipt-upload-for-woocommerce'), $data['time']));
+
+    // Clear session token & cookie
+    WC()->session->__unset('ainbae_bacs_checkout_receipt_' . $token);
+    if (isset($_COOKIE['ainbae_bacs_checkout_token'])) {
+        setcookie('ainbae_bacs_checkout_token', '', time() - 3600, '/');
+    }
+}
+
+function ainbae_bacs_throw_store_api_error($message)
+{
+    if (class_exists('Automattic\WooCommerce\StoreApi\Exceptions\RouteException')) {
+        throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
+            'ainbae_bacs_checkout_error',
+            esc_html($message),
+            400
+        );
+    } else {
+        throw new \Exception(esc_html($message));
+    }
 }

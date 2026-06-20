@@ -13,10 +13,13 @@ jQuery(document).ready(function ($) {
   // WhatsApp toggle
   $('input[name="whatsapp_enabled"]').on("change", function () {
     var row = $("#ainbae-bacs-wa-number-row");
+    var tplRow = $("#ainbae-bacs-wa-template-row");
     if (this.checked) {
       row.css({ opacity: "1", pointerEvents: "auto" });
+      tplRow.css({ opacity: "1", pointerEvents: "auto" });
     } else {
       row.css({ opacity: ".4", pointerEvents: "none" });
+      tplRow.css({ opacity: ".4", pointerEvents: "none" });
     }
     schedulePreview();
   });
