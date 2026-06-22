@@ -5,7 +5,7 @@
 <h1 align="center">Ainbae Receipt Upload for WooCommerce</h1>
 
 <p align="center">
-  Allow customers to upload bank transfer payment receipts directly from the WooCommerce order page — with a modern UI, secure private storage, and admin verification tools.
+  Allow customers to upload bank transfer payment receipts directly from the WooCommerce order page, with a modern UI, secure private storage, and admin verification tools.
 </p>
 
 <p align="center">
@@ -59,49 +59,81 @@
 
 ## 🖼️ Screenshots
 
-### 1. Admin Settings Dashboard
+### 1. Admin Settings - Dashboard
 
 ![Admin Settings](./Screenshots/screenshot-1.png)
 
-Customise the receipt upload widget appearance and functionality. Set colours, labels, and toggle features with a live preview that updates in real time.
+Customise the receipt upload widget appearance and functionality.
+
+### 2. Admin Settings - Customisation
+
+![Customize Settings](./Screenshots/screenshot-2.png)
+
+Customize the widget colours and layout to match your store branding and check live preview.
 
 ---
 
-### 2. Frontend — Thank You Page
+### 3. Admin Setting - WhatsApp Message Template
 
-![Frontend Thank You](./Screenshots/screenshot-2.png)
+![WhatsApp Message Template](./Screenshots/screenshot-3.png)
 
-After placing a BACS order, customers see the receipt upload widget on the order received page, prompting them to upload their payment receipt immediately.
-
----
-
-### 3. Frontend — Order Details Page
-
-![Order Upload](./Screenshots/screenshot-3.png)
-
-Customers can also upload their receipt from the order details page at any time before the order is processed.
+Customize the WhatsApp message template with dynamic variables for a personalized customer experience.
 
 ---
 
-### 4. After Upload — Confirmation Notice
+### 4. Admin Setting - Checkout Behaviour settings
 
-![Upload Notice](./Screenshots/screenshot-4.png)
+![Checkout Behaviour](./Screenshots/screenshot-4.png)
+
+Require Receipt Before Order Placement toggle. If enabled, customers who select Direct Bank Transfer (BACS) must upload their receipt before the order is created. An upload modal appears when they click "Place Order". This setting is disabled by default.
+
+---
+
+### 5. Frontend - Checkout Page
+
+![Checkout Upload](./Screenshots/screenshot-5.png)
+
+The receipt upload modal appears during checkout if "Require Receipt Before Order Placement" is enabled in settings. Customers can drag-and-drop or select their receipt file, and a progress indicator shows the upload status.
+
+---
+
+### 6. Frontend — Thank You Page
+
+![Frontend Thank You](./Screenshots/screenshot-6.png)
+
+After placing an order, customers can upload their receipt directly from the Thank You page. The upload widget is accessible only when Receipt upload is disabled at checkout, and the order is being processed via Bank Transfer (BACS).
+
+
+---
+
+### 7. Frontend — Order Details Page
+
+![Order Upload](./Screenshots/screenshot-7.png)
+
+Customers can also upload their receipt from the order details page if they don't upload it on the Thank You page. The upload widget is displayed only for pending Bank Transfer (BACS) orders.
+
+---
+
+### 8. After Upload — Confirmation Notice
+
+![Upload Notice](./Screenshots/screenshot-8.png)
 
 A confirmation message is displayed after a successful upload, reassuring customers that their payment verification is in progress.
 
 ---
 
-### 5. Payment Verified — Processing Status
+### 9. Payment Verified — Processing Status
 
-![Verified Status](./Screenshots/screenshot-5.png)
+![Verified Status](./Screenshots/screenshot-9.png)
 
 When the admin changes the order status to Processing, customers see a confirmation that their payment has been verified.
 
 ---
 
-### 6. Admin Order Panel — View Receipt
 
-![Admin Order Panel](./Screenshots/screenshot-6.png)
+### 10. Admin Order Panel — View Receipt
+
+![Admin Order Panel](./Screenshots/screenshot-10.png)
 
 Admins can view uploaded receipts securely from the WooCommerce order admin panel using the View Uploaded Receipt button, which opens the file in a new authenticated tab.
 
@@ -112,7 +144,7 @@ Admins can view uploaded receipts securely from the WooCommerce order admin pane
 ### Standard Workflow (default)
 
 1. Customer places an order and selects **Bank Transfer (BACS)** as the payment method.
-2. The receipt upload widget appears on both the **Thank You page** and the **Order Details page**.
+2. The receipt upload widget appears on both the **Thank You page** and the **Order Details page** or on **Checkout Page** if the Require Receipt Before Order Placement setting is enabled.
 3. Customer uploads a **JPG, PNG, or PDF (max 5 MB)**. The file is stored **privately** outside the public media library, renamed to a UUID so the original filename is never exposed on disk.
 4. An order note is added automatically with the upload timestamp.
 5. The admin opens the order and clicks **View Uploaded Receipt** to view the file securely — the endpoint is nonce-authenticated and restricted to `manage_woocommerce` capability.
@@ -120,7 +152,7 @@ Admins can view uploaded receipts securely from the WooCommerce order admin pane
 
 ### Require Receipt at Checkout _(new in 2.0.0)_
 
-When **Require Receipt Before Order Placement** is enabled in settings (default for new installations):
+When **Require Receipt Before Order Placement** is enabled in settings (default disabled):
 
 1. Customer selects **Bank Transfer (BACS)** at checkout.
 2. Customer clicks **Place Order**.
@@ -161,7 +193,9 @@ When **Require Receipt Before Order Placement** is enabled in settings (default 
 ### After activation
 
 - Make sure **Bank Transfer (BACS)** is enabled under **WooCommerce → Settings → Payments**.
-- Enter your WhatsApp number (country code + digits only, e.g. `923001234567`) if you want the WhatsApp button.
+- Configure the receipt upload widget appearance and behaviour under **WooCommerce → Upload Receipt**.
+- If you want checkout receipt upload, enable the **Require Receipt Before Order Placement** toggle in settings.
+- If you want the WhatsApp button, enter your WhatsApp number (country code + digits only, e.g. `923001234567`) in the settings.
 - Save settings. The upload widget appears automatically on order pages for any pending BACS order.
 
 ---
@@ -290,6 +324,24 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 
 ## 📝 Changelog
 
+### 2.1.0
+- **New** Added a completely redesigned admin dashboard interface.
+- **New** Introduced a tabbed settings layout for easier navigation.
+- **New**: Added dedicated tabs for:
+    - **General Settings** (WhatsApp, Require Receipt Before Order Placement Option)
+    - **Text & Labels** (customize all user-facing text)
+    - **Colour Settings** (customize colours for each element of the upload widget)
+    - **Layout Settings** (customize the border radius of the upload widget)
+- **New**: Added a modern settings header with branding and welcome section.
+- **New**: Added sticky "Save Changes" footer for quicker configuration management.
+- **New**: Added improved settings sections with clearer grouping and descriptions.
+- **New**: Added a warning banner if Direct Bank Transfer (BACS) is not enabled in WooCommerce settings.
+- **Fix**: Default whatsapp message template now correctly spaced.
+- **Improvement**: Improved dashboard usability and navigation.
+- **Improvement**: Improved settings organization by separating options into dedicated sections.
+
+---
+
 ### 2.0.0
 
 - **New**: Redesigned settings dashboard with a clean tabbed layout, modern styling, and real-time live preview
@@ -302,6 +354,8 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 - **New**: Debug logging for upload failures, recovery events, missing metadata, and invalid references (gated behind `WP_DEBUG_LOG`)
 - **Compatibility**: All existing settings, uploads, orders, and workflows remain unchanged
 
+---
+
 ### 1.2.0
 
 - Fixed Setting Page WhatsApp number field prefix input styling
@@ -309,10 +363,14 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 - Updated tested up to version to 10.8.1 (WooCommerce)
 - Updated stable tag to 1.2.0 for latest release
 
+---
+
 ### 1.0.3
 
 - Updated tested up to version to 7.0
 - Updated stable tag to 1.0.3 for latest release
+
+---
 
 ### 1.0.2
 
@@ -321,6 +379,8 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 - Replaced echo of binary file contents with `readfile()` to stream files without buffering or escaping concerns
 - Removed broken donate link from readme.txt
 - Updated readme FAQ to reflect new storage path and Nginx configuration instructions
+
+---
 
 ### 1.0.1
 
@@ -332,6 +392,8 @@ Community translations are also accepted via [translate.wordpress.org](https://t
 - Improvement: added `Requires PHP` and `WC requires at least` headers
 - Improvement: uninstall routine now removes uploaded receipt files and order post-meta
 - Improvement: added Settings link to plugin row on the Plugins screen
+
+---
 
 ### 1.0.0
 

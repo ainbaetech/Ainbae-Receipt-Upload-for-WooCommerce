@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Ainbae Receipt Upload for WooCommerce
  * Description: Allows customers to upload bank transfer receipts on the order detail page.
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: Ainbae
  * Author URI: https://www.ainbae.com
  * License: GPL-2.0-or-later
@@ -46,7 +46,7 @@ add_action('before_woocommerce_init', function () {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('AINBAE_BACS_VERSION',       '2.0.0');
+define('AINBAE_BACS_VERSION',       '2.1.0');
 define('AINBAE_BACS_MAX_UPLOAD_SIZE',   5 * 1024 * 1024);
 define('AINBAE_BACS_RATE_LIMIT_MAX',    5);
 define('AINBAE_BACS_RATE_LIMIT_WINDOW', HOUR_IN_SECONDS);
@@ -102,6 +102,16 @@ function ainbae_bacs_get_whatsapp_number()
     $number = defined('BACS_WHATSAPP_NUMBER') ? BACS_WHATSAPP_NUMBER : ainbae_bacs_setting('whatsapp_number');
     return apply_filters('ainbae_bacs_receipt_whatsapp_number', $number);
 }
+
+function ainbae_bacs_is_bacs_enabled()
+{
+    if (! class_exists('WC_Payment_Gateways')) {
+        return false;
+    }
+    $gateways = WC_Payment_Gateways::instance()->payment_gateways();
+    return isset($gateways['bacs']) && 'yes' === $gateways['bacs']->enabled;
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN — MENU & SAVE
@@ -256,9 +266,26 @@ function ainbae_bacs_render_settings_page()
     }
 ?>
     <div class="wrap" id="ainbae-bacs-settings-wrap">
-        <div class="ainbae-bacs-page-header">
-            <img src="<?php echo esc_url(plugins_url('admin/images/ainbae-logo.png', __FILE__)); ?>" alt="<?php esc_attr_e('Ainbae Logo', 'ainbae-receipt-upload-for-woocommerce'); ?>" onerror="this.style.display='none';">
-            <p><?php esc_html_e('Customise the payment receipt widget shown to customers', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
+        <!-- Hero -->
+        <div class="ainbae-bacs-header">
+            <div class="ainbae-bacs-header-content">
+                <div>
+                    <img class="ainbae-bacs-logo" src="<?php echo esc_url(plugins_url('admin/images/ainbae-logo.png', __FILE__)); ?>"
+                        alt="<?php esc_attr_e('Ainbae Logo', 'ainbae-receipt-upload-for-woocommerce'); ?>"
+                        onerror="this.style.display='none';">
+                    <h1>
+                        <?php esc_html_e('Welcome to Ainbae Receipt!', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                    </h1>
+                    <p><?php esc_html_e('Collect Payment Receipts with Confidence', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                    </p>
+                </div>
+
+                <div class="ainbae-bacs-illustration-container">
+                    <img class="ainbae-bacs-illustration" src="<?php echo esc_url(plugins_url('admin/images/ainabe-illustration.png', __FILE__)); ?>"
+                        alt="<?php esc_attr_e('Ainbae Illustration', 'ainbae-receipt-upload-for-woocommerce'); ?>"
+                        onerror="this.style.display='none';">
+                </div>
+            </div>
         </div>
 
         <?php $updated = '';
@@ -270,97 +297,237 @@ function ainbae_bacs_render_settings_page()
         }
 
         if ($updated) : ?>
-            <div class="notice notice-success is-dismissible" style="border-left-color:#0aa7ff;margin-bottom:20px;">
-                <p><strong>&#10003; <?php esc_html_e('Settings saved successfully.', 'ainbae-receipt-upload-for-woocommerce'); ?></strong></p>
+            <div class="notice notice-success is-dismissible inline" style="border-left-color:#0aa7ff;margin-bottom:20px;">
+                <p><strong>&#10003;
+                        <?php esc_html_e('Settings saved successfully.', 'ainbae-receipt-upload-for-woocommerce'); ?></strong>
+                </p>
             </div>
         <?php endif; ?>
 
-        <form method="post" action="">
-            <?php wp_nonce_field('ainbae_bacs_save_settings_action', 'ainbae_bacs_settings_nonce'); ?>
+        <!-- TITLE -->
+        <div class="ainbae-bacs-settings-title">
+            <h1>
+                <?php esc_html_e('Widget settings', 'ainbae-receipt-upload-for-woocommerce'); ?>
+            </h1>
+            <p>
+                <?php esc_html_e('Configure and customise how receipts are sent to your customers.', 'ainbae-receipt-upload-for-woocommerce'); ?>
+            </p>
+        </div>
 
-            <div class="ainbae-bacs-card" style="margin-bottom:24px;">
-                <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#ecfdf5,#a7f3d040);">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                    </svg>
-                    <span><?php esc_html_e('Checkout Behaviour', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
+        <!-- WARNING -->
+        <?php if (! ainbae_bacs_is_bacs_enabled()) : ?>
+            <div class="ainbae-bacs-warning-banner">
+                <div class="ainbae-bacs-warning-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
-                <div class="ainbae-bacs-card-body">
-                    <div class="ainbae-bacs-field ainbae-bacs-field-toggle">
-                        <div>
-                            <label class="ainbae-bacs-label"><?php esc_html_e('Require Receipt Before Order Placement', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
-                            <p class="ainbae-bacs-desc"><?php esc_html_e('When enabled, customers selecting Direct Bank Transfer (BACS) must upload a receipt before the order is created. An upload modal will appear when they click "Place Order". Applies to BACS only — other payment methods are unaffected. Default: disabled.', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                        </div>
-                        <label class="ainbae-bacs-toggle">
-                            <input type="checkbox" name="require_receipt_before_order" value="1" <?php checked($s['require_receipt_before_order'], '1'); ?>>
-                            <span class="ainbae-bacs-toggle-slider"></span>
-                        </label>
-                    </div>
+                <div class="ainbae-bacs-warning-content">
+                    <strong><?php esc_html_e('Direct Bank Transfer (BACS) is Disabled', 'ainbae-receipt-upload-for-woocommerce'); ?></strong>
+                    <p><?php echo wp_kses(
+                        sprintf(
+                            /* translators: %s: link to WooCommerce payment settings */
+                            __('This plugin works only if Direct bank transfer is enabled. Please enable the <a href="%s">Direct bank transfer (BACS)</a>.', 'ainbae-receipt-upload-for-woocommerce'),
+                            esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=bacs'))
+                        ),
+                        array(
+                            'a' => array(
+                                'href' => array(),
+                            ),
+                        )
+                    ); ?></p>
                 </div>
             </div>
+        <?php endif; ?>
 
-            <div class="ainbae-bacs-grid">
-                <div class="ainbae-bacs-col">
-                    <div class="ainbae-bacs-card">
-                        <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#dcfce7,#bbf7d040);">
-                            <svg fill="#25d366" width="17" height="17" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z" />
-                                <path d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z" />
+
+        <form method="post" action="">
+        <?php wp_nonce_field('ainbae_bacs_save_settings_action', 'ainbae_bacs_settings_nonce'); ?>
+
+        <div class="ainbae-bacs-settings">
+            <div class="ainbae-bacs-settings-container">
+                <ul role="tablist" aria-label="Dashboard sections" class="ainbae-bacs-tablist">
+
+                    <!-- ===================== General ===================== -->
+                    <li class="ainbae-bacs-tablist-item">
+                        <button type="button" role="tab" id="ainbae-bacs-generalTab" aria-selected="true"
+                            aria-controls="ainbae-bacs-generalContent" class="ainbae-bacs-tab ainbae-bacs-tab-active">
+                            <!-- Gear / settings icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings">
+                                <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+                                <circle cx="12" cy="12" r="3" />
                             </svg>
-                            <span><?php esc_html_e('WhatsApp', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
-                        </div>
-                        <div class="ainbae-bacs-card-body">
-                            <div class="ainbae-bacs-field ainbae-bacs-field-toggle">
-                                <div>
-                                    <label class="ainbae-bacs-label"><?php esc_html_e('Enable WhatsApp Button', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
-                                    <p class="ainbae-bacs-desc"><?php esc_html_e('Show a "Send via WhatsApp" button below the upload form', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
+                            <?php esc_html_e('General', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                        </button>
+                    </li>
+
+                    <!-- ===================== Text and Label ===================== -->
+                    <li class="ainbae-bacs-tablist-item">
+                        <button type="button" role="tab" id="ainbae-bacs-textLabelTab" aria-selected="false"
+                            aria-controls="ainbae-bacs-textLabelContent" class="ainbae-bacs-tab">
+                            <!-- Text / type icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen-icon lucide-square-pen">
+                                <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" />
+                            </svg>
+                            <?php esc_html_e('Text and Label', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                        </button>
+                    </li>
+
+                    <!-- ===================== Colour ===================== -->
+                    <li class="ainbae-bacs-tablist-item">
+                        <button type="button" role="tab" id="ainbae-bacs-colourTab" aria-selected="false"
+                            aria-controls="ainbae-bacs-colourContent" class="ainbae-bacs-tab">
+                            <!-- Paint / colour icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette-icon lucide-palette">
+                                <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+                                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                            </svg>
+                            <?php esc_html_e('Colour', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                        </button>
+                    </li>
+
+                    <!-- ===================== Layout ===================== -->
+                    <li class="ainbae-bacs-tablist-item">
+                        <button type="button" role="tab" id="ainbae-bacs-layoutTab" aria-selected="false"
+                            aria-controls="ainbae-bacs-layoutContent" class="ainbae-bacs-tab">
+                            <!-- Layout / grid icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="9" rx="1" />
+                                <rect x="14" y="3" width="7" height="5" rx="1" />
+                                <rect x="14" y="12" width="7" height="9" rx="1" />
+                                <rect x="3" y="16" width="7" height="5" rx="1" />
+                            </svg>
+                            <?php esc_html_e('Layout', 'ainbae-receipt-upload-for-woocommerce'); ?>
+
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Panels -->
+                <div class="ainbae-bacs-panels">
+
+                    <!-- ===================== General TAB Content ===================== -->
+                    <div id="ainbae-bacs-generalContent" role="tabpanel" aria-labelledby="ainbae-bacs-generalTab"
+                        class="ainbae-bacs-tab-content ainbae-bacs-tab-content-active">
+                        <div class="ainbae-bacs-tab-container">
+                            <!-- Checkout Behaviour -->
+                            <div class="ainbae-bacs-tab-general">
+                                <div class="ainbae-bacs-tab-general-heading">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="9" cy="21" r="1" />
+                                        <circle cx="20" cy="21" r="1" />
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                    </svg>
+                                    <h2>
+                                        <?php esc_html_e('Checkout Behaviour', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                    </h2>
                                 </div>
-                                <label class="ainbae-bacs-toggle">
-                                    <input type="checkbox" name="whatsapp_enabled" value="1" <?php checked($s['whatsapp_enabled'], '1'); ?>>
-                                    <span class="ainbae-bacs-toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="ainbae-bacs-field" id="ainbae-bacs-wa-number-row" <?php if ($s['whatsapp_enabled'] !== '1') {
-                                                                                                echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
-                                                                                            } ?>>
-                                <label class="ainbae-bacs-label" for="whatsapp_number"><?php esc_html_e('WhatsApp Number', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
-                                <p class="ainbae-bacs-desc"><?php esc_html_e('Include country code, digits only (e.g. 1234567890)', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                                <div class="ainbae-bacs-input-prefix">
-                                    <span>+</span>
-                                    <input type="text" id="whatsapp_number" name="whatsapp_number" value="<?php echo esc_attr($s['whatsapp_number']); ?>" placeholder="1234567890" class="ainbae-bacs-input">
+                                <div class="ainbae-bacs-tab-general-subheading">
+                                    <div class="ainbae-bacs-headingLabelGroup">
+                                        <h3 class="ainbae-bacs-label">
+                                            <?php esc_html_e('Require Receipt Before Checkout', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                        </h3>
+                                        <p class=" ainbae-bacs-desc">
+                                            <?php esc_html_e('Make receipt uploads mandatory before order placement.', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                        </p>
+                                    </div>
+                                    <label class="ainbae-bacs-toggle">
+                                        <input type="checkbox" name="require_receipt_before_order" value="1"
+                                            <?php checked($s['require_receipt_before_order'], '1'); ?>>
+                                        <span class="ainbae-bacs-toggle-slider"></span>
+                                    </label>
                                 </div>
-                            </div>
-                            <div class="ainbae-bacs-field" id="ainbae-bacs-wa-template-row" <?php if ($s['whatsapp_enabled'] !== '1') {
-                                                                                                  echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
-                                                                                              } ?>>
-                                <label class="ainbae-bacs-label" for="whatsapp_message_template"><?php esc_html_e('WhatsApp Message Template', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
-                                <p class="ainbae-bacs-desc"><?php esc_html_e('Customise the message sent to WhatsApp. Leave blank to use the default message. Variables will be replaced automatically with order data.', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                                <textarea id="whatsapp_message_template" name="whatsapp_message_template" rows="6" class="ainbae-bacs-input ainbae-bacs-textarea" placeholder="<?php esc_attr_e('Leave blank to use the default message.', 'ainbae-receipt-upload-for-woocommerce'); ?>"><?php echo esc_textarea($s['whatsapp_message_template']); ?></textarea>
-                                <p class="ainbae-bacs-desc" style="margin-top:8px;font-size:11px;">
-                                    <?php esc_html_e('Supported variables:', 'ainbae-receipt-upload-for-woocommerce'); ?><br>
-                                    <code>{order_number}</code> &nbsp;
-                                    <code>{order_total}</code> &nbsp;
-                                    <code>{customer_name}</code> &nbsp;
-                                    <code>{billing_email}</code> &nbsp;
-                                    <code>{billing_phone}</code> &nbsp;
-                                    <code>{site_name}</code> &nbsp;
-                                    <code>{currency}</code> &nbsp;
-                                    <code>{order_date}</code>
+                                <p class="ainbae-bacs-desc">
+                                    <?php esc_html_e('When enabled, Customers must upload their payment screenshot or receipt before proceeding with the order.', 'ainbae-receipt-upload-for-woocommerce'); ?>
                                 </p>
+                            </div>
+                            <!-- WHATSAPP SETTINGS -->
+                            <?php $is_whatsapp_disabled = ($s['require_receipt_before_order'] === '1'); ?>
+                            <div class="ainbae-bacs-tab-general" id="ainbae-bacs-whatsapp-settings-group" <?php if ($is_whatsapp_disabled) {
+                                                                                                                echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
+                                                                                                            } ?>>
+                                <div class="ainbae-bacs-tab-general-heading">
+                                    <svg fill="#0066ff" width="17" height="17" viewBox="0 0 16 16"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z" />
+                                        <path
+                                            d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z" />
+                                    </svg>
+                                    <h2>
+                                        <?php esc_html_e('WhatsApp Settings', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                    </h2>
+                                </div>
+                                <div class="ainbae-bacs-tab-general-subheading">
+                                    <div class="ainbae-bacs-headingLabelGroup">
+                                        <h3 class="ainbae-bacs-label">
+                                            <?php esc_html_e('Enable WhatsApp button', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                        </h3>
+                                        <p class="ainbae-bacs-desc">
+                                            <?php esc_html_e('Show a "Send via WhatsApp" button below the upload form.', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                        </p>
+                                    </div>
+                                    <label class="ainbae-bacs-toggle">
+                                        <input type="checkbox" name="whatsapp_enabled" value="1"
+                                            <?php checked($s['whatsapp_enabled'], '1'); ?> <?php disabled($is_whatsapp_disabled); ?>>
+                                        <span class="ainbae-bacs-toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="ainbae-bacs-headingLabelGroup" id="ainbae-bacs-wa-number-row" <?php if ($s['whatsapp_enabled'] !== '1' || $is_whatsapp_disabled) {
+                                                                                                                echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
+                                                                                                            } ?>>
+                                    <h3 class="ainbae-bacs-label"
+                                        for="whatsapp_number"><?php esc_html_e('WhatsApp Number', 'ainbae-receipt-upload-for-woocommerce'); ?></h3>
+                                    <p class="ainbae-bacs-desc">
+                                        <?php esc_html_e('Include country code, digits only (e.g. 1234567890)', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                    </p>
+                                    <div class="ainbae-bacs-input-prefix">
+                                        <span>+</span>
+                                        <input type="text" id="whatsapp_number" name="whatsapp_number"
+                                            value="<?php echo esc_attr($s['whatsapp_number']); ?>" placeholder="1234567890"
+                                            class="ainbae-bacs-input" <?php disabled($is_whatsapp_disabled || $s['whatsapp_enabled'] !== '1'); ?>>
+                                    </div>
+                                </div>
+                                <div class="ainbae-bacs-headingLabelGroup" id="ainbae-bacs-wa-template-row" <?php if ($s['whatsapp_enabled'] !== '1' || $is_whatsapp_disabled) {
+                                                                                                                echo 'style="' . esc_attr('opacity:.4;pointer-events:none;') . '"';
+                                                                                                            } ?>>
+                                    <h3 class="ainbae-bacs-label"
+                                        for="whatsapp_message_template"><?php esc_html_e('WhatsApp Message Template', 'ainbae-receipt-upload-for-woocommerce'); ?></h3>
+                                    <p class="ainbae-bacs-desc">
+                                        <?php esc_html_e('Customise the message sent to WhatsApp. Leave blank to use the default message. Variables will be replaced automatically with order data.', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                    </p>
+                                    <textarea id="whatsapp_message_template" name="whatsapp_message_template" rows="6"
+                                        class="ainbae-bacs-input ainbae-bacs-textarea"
+                                        placeholder="<?php esc_attr_e('Leave blank to use the default message.', 'ainbae-receipt-upload-for-woocommerce'); ?>" <?php disabled($is_whatsapp_disabled || $s['whatsapp_enabled'] !== '1'); ?>><?php echo esc_textarea($s['whatsapp_message_template']); ?></textarea>
+                                </div>
+                                <div>
+                                    <p class="ainbae-bacs-desc">
+                                        Supported variables:
+                                    </p>
+
+                                    <div class="ainbae-bacs-support-variable">
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{order_number}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{order_total}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{customer_name}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{billing_email}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{billing_phone}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{site_name}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{currency}</span>
+                                        <span class="px-3 py-1 bg-slate-100 rounded-lg text-sm">{order_date}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="ainbae-bacs-card">
-                        <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe40);">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            <span><?php esc_html_e('Text & Labels', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
-                        </div>
-                        <div class="ainbae-bacs-card-body">
+                    <!-- ===================== Text and Label TAB Content ===================== -->
+                    <div id="ainbae-bacs-textLabelContent" role="tabpanel" aria-labelledby="ainbae-bacs-textLabelTab"
+                        class="ainbae-bacs-tab-content">
+                        <div class="ainbae-bacs-tab-container">
                             <?php
                             $labels = array(
                                 'label_heading'    => array(__('Heading', 'ainbae-receipt-upload-for-woocommerce'),         __('Main title at the top of the widget', 'ainbae-receipt-upload-for-woocommerce')),
@@ -372,106 +539,147 @@ function ainbae_bacs_render_settings_page()
                             );
                             foreach ($labels as $key => list($title, $desc)) :
                             ?>
-                                <div class="ainbae-bacs-field">
-                                    <label class="ainbae-bacs-label" for="<?php echo esc_attr($key); ?>"><?php echo esc_html($title); ?></label>
+                                <div class="ainbae-bacs-headingLabelGroup">
+                                    <h3 class="ainbae-bacs-label"
+                                        for="<?php echo esc_attr($key); ?>"><?php echo esc_html($title); ?></h3>
                                     <p class="ainbae-bacs-desc"><?php echo esc_html($desc); ?></p>
-                                    <input type="text" id="<?php echo esc_attr($key); ?>" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($s[$key]); ?>" class="ainbae-bacs-input">
+                                    <input type="text" id="<?php echo esc_attr($key); ?>" name="<?php echo esc_attr($key); ?>"
+                                        value="<?php echo esc_attr($s[$key]); ?>" class="ainbae-bacs-input">
                                 </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <div class="ainbae-bacs-card">
-                        <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#fff7ed,#fed7aa40);">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <path d="M3 9h18M9 21V9" />
-                            </svg>
-                            <span><?php esc_html_e('Layout', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
+                    <!-- ===================== Colour TAB Content ===================== -->
+                    <div id="ainbae-bacs-colourContent" role="tabpanel" aria-labelledby="ainbae-bacs-colourTab"
+                        class="ainbae-bacs-tab-content">
+                        <div class="ainbae-bacs-tab-container">
+                            <div class="ainbae-bacs-tab-general-heading">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card-icon lucide-credit-card"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                <h2>
+                                    <?php esc_html_e('Card', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_card_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_card_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+
+                            <div class="ainbae-bacs-tab-general-heading">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-up-icon lucide-folder-up"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/></svg>
+                                <h2>
+                                    <?php esc_html_e('Drop Zone', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_dropzone_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_dropzone_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_icon', __('Icon', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+
+                            <div class="ainbae-bacs-tab-general-heading">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-upload-icon lucide-cloud-upload"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>
+                                <h2>
+                                    <?php esc_html_e('Upload Button', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_upload_btn_from', __('Gradient Start', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_upload_btn_to', __('Gradient End', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_upload_btn_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+
+                            <div class="ainbae-bacs-tab-general-heading">
+                                <svg fill="#0066ff" width="17" height="17" viewBox="0 0 16 16"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z" />
+                                    <path
+                                        d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z" />
+                                </svg>
+                                <h2>
+                                    <?php esc_html_e('WhatsApp Button', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_wa_btn_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_wa_btn_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_wa_btn_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+
+                            <div class="ainbae-bacs-tab-general-heading">
+            
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-case-sensitive-icon lucide-case-sensitive"><path d="m2 16 4.039-9.69a.5.5 0 0 1 .923 0L11 16"/><path d="M22 9v7"/><path d="M3.304 13h6.392"/><circle cx="18.5" cy="12.5" r="3.5"/></svg>
+                                <h2>
+                                    <?php esc_html_e('Text', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_heading', __('Heading', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_subtitle', __('Subtitle', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_hint', __('Hint', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+
+                            <div class="ainbae-bacs-tab-general-heading">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-between-horizontal-start-icon lucide-between-horizontal-start"><rect width="13" height="7" x="8" y="3" rx="1"/><path d="m2 9 3 3-3 3"/><rect width="13" height="7" x="8" y="14" rx="1"/></svg>
+                                <h2>
+                                    <?php esc_html_e('OR Divider', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                                </h2>
+                            </div>
+                            <?php ainbae_bacs_colour_field('color_or_line', __('Line', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
+                            <?php ainbae_bacs_colour_field('color_or_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
                         </div>
-                        <div class="ainbae-bacs-card-body">
-                            <div class="ainbae-bacs-field">
-                                <label class="ainbae-bacs-label" for="card_border_radius"><?php esc_html_e('Card Corner Radius (px)', 'ainbae-receipt-upload-for-woocommerce'); ?></label>
-                                <p class="ainbae-bacs-desc"><?php esc_html_e('Roundness of the outer card corners (0 = square, 40 = pill)', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                                <div class="ainbae-bacs-range-row">
-                                    <input type="range" id="ainbae_bacs_br_range" min="0" max="40" value="<?php echo esc_attr($s['card_border_radius']); ?>" class="ainbae-bacs-range-slider">
-                                    <input type="number" id="card_border_radius" name="card_border_radius" min="0" max="40" value="<?php echo esc_attr($s['card_border_radius']); ?>" class="ainbae-bacs-input ainbae-bacs-range-input">
-                                </div>
+                    </div>
+
+                    <!-- ===================== Layout TAB Content ===================== -->
+                    <div id="ainbae-bacs-layoutContent" role="tabpanel" aria-labelledby="ainbae-bacs-layoutTab"
+                        class="ainbae-bacs-tab-content">
+                        <div class="ainbae-bacs-headingLabelGroup">
+                            <h3 class="ainbae-bacs-label"
+                                for="card_border_radius"><?php esc_html_e('Card Corner Radius (px)', 'ainbae-receipt-upload-for-woocommerce'); ?></h3>
+                            <p class="ainbae-bacs-desc">
+                                <?php esc_html_e('Roundness of the outer card corners (0 = square, 40 = pill)', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                            </p>
+                            <div class="ainbae-bacs-range-row">
+                                <input type="range" id="ainbae_bacs_br_range" min="0" max="40"
+                                    value="<?php echo esc_attr($s['card_border_radius']); ?>"
+                                    class="ainbae-bacs-range-slider">
+                                <input type="number" id="card_border_radius" name="card_border_radius" min="0" max="40"
+                                    value="<?php echo esc_attr($s['card_border_radius']); ?>"
+                                    class="ainbae-bacs-input ainbae-bacs-range-input">
                             </div>
                         </div>
                     </div>
 
                 </div>
 
-                <div class="ainbae-bacs-col">
-
-                    <div class="ainbae-bacs-card">
-                        <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce740);">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            <span><?php esc_html_e('Live Preview', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
-                        </div>
-                        <div class="ainbae-bacs-card-body" style="padding:14px;">
-                            <div id="ainbae-bacs-preview-container" style="pointer-events:none;user-select:none;"></div>
-                            <p style="text-align:center;color:#aaa;font-size:11px;margin:8px 0 0;"><?php esc_html_e('Updates automatically as you change settings above', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                        </div>
+            </div>
+            <!-- LIVE PREVIEW -->
+            <div class="ainbae-bacs-settings-container">
+                <div class="ainbae-bacs-card ainbae-bacs-preview-card">
+                    <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce740);">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0066ff" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <span><?php esc_html_e('Live Preview', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
                     </div>
-
-                    <div class="ainbae-bacs-card">
-                        <div class="ainbae-bacs-card-header" style="background:linear-gradient(135deg,#fdf4ff,#f0abfc20);">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="13.5" cy="6.5" r=".5" fill="#9333ea" />
-                                <circle cx="17.5" cy="10.5" r=".5" fill="#9333ea" />
-                                <circle cx="8.5" cy="7.5" r=".5" fill="#9333ea" />
-                                <circle cx="6.5" cy="12.5" r=".5" fill="#9333ea" />
-                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-                            </svg>
-                            <span><?php esc_html_e('Colours', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
-                        </div>
-                        <div class="ainbae-bacs-card-body">
-                            <p class="ainbae-bacs-section-title"><?php esc_html_e('Card', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_card_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_card_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-
-                            <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e('Drop Zone', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_dropzone_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_dropzone_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_icon', __('Icon', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-
-                            <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e('Upload Button', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_upload_btn_from', __('Gradient Start', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_upload_btn_to', __('Gradient End', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_upload_btn_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-
-                            <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e('WhatsApp Button', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_wa_btn_bg', __('Background', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_wa_btn_border', __('Border', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_wa_btn_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-
-                            <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e('Typography', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_heading', __('Heading', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_subtitle', __('Subtitle', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_hint', __('Hint', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-
-                            <p class="ainbae-bacs-section-title" style="margin-top:16px;"><?php esc_html_e('OR Divider', 'ainbae-receipt-upload-for-woocommerce'); ?></p>
-                            <?php ainbae_bacs_colour_field('color_or_line', __('Line', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                            <?php ainbae_bacs_colour_field('color_or_text', __('Text', 'ainbae-receipt-upload-for-woocommerce'), $s); ?>
-                        </div>
+                    <div class="ainbae-bacs-card-body" style="padding:14px;">
+                        <div id="ainbae-bacs-preview-container" style="pointer-events:none;user-select:none;"></div>
+                        <p style="text-align:center;color:#aaa;font-size:11px;margin:8px 0 0;">
+                            <?php esc_html_e('Updates automatically as you change settings above', 'ainbae-receipt-upload-for-woocommerce'); ?>
+                        </p>
                     </div>
                 </div>
             </div>
+        </div>
 
-
-            <div class="ainbae-bacs-sticky-footer">
-                <span><?php esc_html_e('Changes apply to all customers immediately after saving.', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
-                <button type="submit" name="ainbae_bacs_save_settings" class="ainbae-bacs-save-btn">
-                    <?php esc_html_e('Save Settings', 'ainbae-receipt-upload-for-woocommerce'); ?>
-                </button>
-            </div>
+        <div class="ainbae-bacs-sticky-footer">
+            <span><?php esc_html_e('Changes apply to all customers immediately after saving.', 'ainbae-receipt-upload-for-woocommerce'); ?></span>
+            <button type="submit" name="ainbae_bacs_save_settings" class="ainbae-bacs-save-btn">
+                <?php esc_html_e('Save Settings', 'ainbae-receipt-upload-for-woocommerce'); ?>
+            </button>
+        </div>
         </form>
     </div>
+
+
+
+
+
+
+
 <?php
 }
 
@@ -481,7 +689,8 @@ function ainbae_bacs_colour_field($key, $label, $s)
     <div class="ainbae-bacs-colour-row">
         <span class="ainbae-bacs-colour-label"><?php echo esc_html($label); ?></span>
         <div class="ainbae-bacs-colour-right">
-            <input type="text" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($s[$key]); ?>" class="ainbae-bacs-color-picker" data-default-color="<?php echo esc_attr($s[$key]); ?>">
+            <input type="text" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($s[$key]); ?>"
+                class="ainbae-bacs-color-picker" data-default-color="<?php echo esc_attr($s[$key]); ?>">
         </div>
     </div>
 <?php
@@ -505,7 +714,7 @@ function ainbae_bacs_get_whatsapp_message($order)
 
     if (empty(trim($template))) {
         /* translators: WhatsApp default message. %1$s=order number, %2$s=order total, %3$s=currency, %4$s=site name */
-        $template = __("Hello,\n\nI have completed payment for Order #{order_number}.\n\nOrder Total: {currency} {order_total}\n\nPlease find my payment receipt attached.\n\nThank you,\n{customer_name}", 'ainbae-receipt-upload-for-woocommerce');
+        $template = __("Hello, I have completed payment for Order #{order_number}. Order Total: {currency} {order_total} Please find my payment receipt attached. Thank you, {customer_name}", 'ainbae-receipt-upload-for-woocommerce');
     }
 
     $billing_first = method_exists($order, 'get_billing_first_name') ? $order->get_billing_first_name() : '';
@@ -662,12 +871,15 @@ function ainbae_bacs_receipt_upload_form($order)
             <input type="hidden" name="ainbae_bacs_order_key" value="<?php echo esc_attr($order_key); ?>">
 
             <div class="ainbae-bacs-dropzone" id="ainbae-bacs-dropzone">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
                     <polyline points="16 16 12 12 8 16"></polyline>
                     <line x1="12" y1="12" x2="12" y2="21"></line>
                     <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
                 </svg>
-                <input type="file" name="ainbae_bacs_receipt_file" id="ainbae_bacs_receipt_file" accept=".jpg,.jpeg,.png,.pdf" required>
+                <input type="file" name="ainbae_bacs_receipt_file" id="ainbae_bacs_receipt_file"
+                    accept=".jpg,.jpeg,.png,.pdf" required>
                 <div class="ainbae-bacs-dropzone-label">
                     <?php echo esc_html(ainbae_bacs_setting('label_dropzone')); ?>
                     <span id="ainbae-bacs-file-name"></span>
@@ -684,8 +896,10 @@ function ainbae_bacs_receipt_upload_form($order)
             <div class="ainbae-bacs-or"><?php esc_html_e('OR', 'ainbae-receipt-upload-for-woocommerce'); ?></div>
             <a href="<?php echo esc_url($wa_link); ?>" target="_blank" rel="noopener noreferrer" class="ainbae-bacs-btn-wa">
                 <svg fill="currentColor" width="20" height="20" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z" />
-                    <path d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z" />
+                    <path
+                        d="M11.42 9.49c-.19-.09-1.1-.54-1.27-.61s-.29-.09-.42.1-.48.6-.59.73-.21.14-.4 0a5.13 5.13 0 0 1-1.49-.92 5.25 5.25 0 0 1-1-1.29c-.11-.18 0-.28.08-.38s.18-.21.28-.32a1.39 1.39 0 0 0 .18-.31.38.38 0 0 0 0-.33c0-.09-.42-1-.58-1.37s-.3-.32-.41-.32h-.4a.72.72 0 0 0-.5.23 2.1 2.1 0 0 0-.65 1.55A3.59 3.59 0 0 0 5 8.2 8.32 8.32 0 0 0 8.19 11c.44.19.78.3 1.05.39a2.53 2.53 0 0 0 1.17.07 1.93 1.93 0 0 0 1.26-.88 1.67 1.67 0 0 0 .11-.88c-.05-.07-.17-.12-.36-.21z" />
+                    <path
+                        d="M13.29 2.68A7.36 7.36 0 0 0 8 .5a7.44 7.44 0 0 0-6.41 11.15l-1 3.85 3.94-1a7.4 7.4 0 0 0 3.55.9H8a7.44 7.44 0 0 0 5.29-12.72zM8 14.12a6.12 6.12 0 0 1-3.15-.87l-.22-.13-2.34.61.62-2.28-.14-.23a6.18 6.18 0 0 1 9.6-7.65 6.12 6.12 0 0 1 1.81 4.37A6.19 6.19 0 0 1 8 14.12z" />
                 </svg>
                 <?php echo esc_html(ainbae_bacs_setting('label_wa_btn')); ?>
             </a>

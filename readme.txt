@@ -4,27 +4,28 @@ Tags: woocommerce, payment verification, receipt, bank transfer, payment receipt
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
 Allow customers to upload bank transfer receipts directly from the WooCommerce order details page.
 
 == Description ==
-**Ainbae Receipt Upload for WooCommerce** adds a secure upload widget to the customer-facing order detail page. When a customer pays via bank transfer (BACS), they can immediately upload a screenshot or PDF of their payment receipt — no emails, no support tickets, no guesswork.
+**Ainbae Receipt Upload for WooCommerce** adds a secure upload widget to the customer-facing order detail page. When a customer pays via bank transfer (BACS), they can immediately upload a screenshot or PDF of their payment receipt, no emails, no support tickets, no guesswork.
  
 You get a clean, nonce-protected upload flow. Your customer gets instant confirmation. Your admin team gets a one-click "View Uploaded Receipt" button inside the WooCommerce order panel.
 
 = How it works =
 1. Customer places an order and selects Bank Transfer (BACS) as payment method.
 2. After placing the order, the receipt upload widget appears on the order detail page.
-3. Customer uploads a JPG, PNG, or PDF (max 5 MB). The file is stored privately — not in the public media library.
+3. Customer uploads a JPG, PNG, or PDF (max 5 MB). The file is stored privately, not in the public media library.
 4. An order note is added automatically, and the admin can view the receipt securely from the order panel.
 5. Optionally, a WhatsApp button lets customers send their receipt directly to your WhatsApp number.
-
+6. Optionally, For stores that want to enforce receipt uploads before order placement, the plugin can be configured to require a receipt upload before the order is created (BACS only).
 
 == Features ==
 - Upload receipt from order page
+- Drag-and-drop upload with progress bar
 - Supports JPG, PNG, PDF
 - Admin can view receipts securely
 - WhatsApp integration with customisable message templates
@@ -105,14 +106,36 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 
 == Screenshots ==
+
 1. The Admin Setting Page with live widget preview and customisation options.
-2. The receipt upload widget as seen by the customer on the order received page.
-3. The receipt upload widget as seen by the customer on the order detail page.
-4. The confirmation message displayed after a successful upload.
-5. The confirmation message displayed when order status is changed to processing by admin.
-6. The "View Uploaded Receipt" button in the WooCommerce order admin panel.
+2. Customize the widget colours and layout to match your store branding and check live preview.
+3. Customize the WhatsApp message template with dynamic variables for a personalized customer experience.
+4. Require Receipt Before Order Placement toggle. If enabled, customers who select Direct Bank Transfer (BACS) must upload their receipt before the order is created. An upload modal appears when they click "Place Order". This setting is disabled by default.
+5. The receipt upload modal appears during checkout if "Require Receipt Before Order Placement" is enabled in settings. Customers can drag-and-drop or select their receipt file, and a progress indicator shows the upload status.
+6. The receipt upload widget as seen by the customer on the order received or thank you page.
+7. The receipt upload widget as seen by the customer on the order detail page.
+8. The confirmation message displayed after a successful upload.
+9. The confirmation message displayed when order status is changed to processing by admin.
+10. The "View Uploaded Receipt" button in the WooCommerce order admin panel.
+
 
 == Changelog ==
+
+= 2.1.0 =
+- New: Added a completely redesigned admin dashboard interface.
+- New: Introduced a tabbed settings layout for easier navigation.
+- New: Added dedicated tabs for:
+    - General Settings (WhatsApp, Require Receipt Before Order Placement Option)
+    - Text & Labels (customize all user-facing text)
+    - Colour Settings (customize colours for each element of the upload widget)
+    - Layout Settings (customize the border radius of the upload widget)
+- New: Added a modern settings header with branding and welcome section.
+- New: Added sticky "Save Changes" footer for quicker configuration management.
+- New: Added improved settings sections with clearer grouping and descriptions.
+- New: Added a warning banner if Direct Bank Transfer (BACS) is not enabled in WooCommerce settings.
+- Fix: Default whatsapp message template now correctly spaced.
+- Improvement: Improved dashboard usability and navigation.
+- Improvement: Improved settings organization by separating options into dedicated sections.
 
 = 2.0.0 =
 - New: Custom WhatsApp message template with dynamic variable support ({order_number}, {order_total}, {customer_name}, {billing_email}, {billing_phone}, {site_name}, {currency}, {order_date})
@@ -152,5 +175,5 @@ The plugin checks that the logged-in user's ID matches the order's customer ID. 
 
 == Upgrade Notice ==
 
-= 2.0.0 =
-Major feature release. Adds custom WhatsApp message templates, optional require-receipt-before-order checkout flow (BACS only), and fixes a receipt detection bug in WooCommerce admin. All existing settings, uploads, and orders remain fully compatible.
+= 2.1.0 =
+Introduces a brand-new tabbed admin dashboard, making plugin settings easier to navigate, manage, and customize. Existing settings remain fully compatible after updating.

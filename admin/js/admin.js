@@ -12,23 +12,73 @@ jQuery(document).ready(function ($) {
 
   // WhatsApp toggle
   $('input[name="whatsapp_enabled"]').on("change", function () {
+    var requireReceipt = $('input[name="require_receipt_before_order"]').is(':checked');
+    if (requireReceipt) {
+      return; // Do nothing if WhatsApp settings are disabled
+    }
+
     var row = $("#ainbae-bacs-wa-number-row");
     var tplRow = $("#ainbae-bacs-wa-template-row");
+    var waNumberInput = $('#whatsapp_number');
+    var waTemplateInput = $('#whatsapp_message_template');
+
     if (this.checked) {
       row.css({ opacity: "1", pointerEvents: "auto" });
       tplRow.css({ opacity: "1", pointerEvents: "auto" });
+      waNumberInput.prop('disabled', false);
+      waTemplateInput.prop('disabled', false);
     } else {
       row.css({ opacity: ".4", pointerEvents: "none" });
       tplRow.css({ opacity: ".4", pointerEvents: "none" });
+      waNumberInput.prop('disabled', true);
+      waTemplateInput.prop('disabled', true);
+    }
+
+    schedulePreview();
+  });
+
+  // Require receipt before order placement toggle
+  $('input[name="require_receipt_before_order"]').on("change", function () {
+    var waGroup = $("#ainbae-bacs-whatsapp-settings-group");
+    var waEnabledInput = $('input[name="whatsapp_enabled"]');
+    var waNumberInput = $('#whatsapp_number');
+    var waTemplateInput = $('#whatsapp_message_template');
+
+    if (this.checked) {
+      waGroup.css({ opacity: ".4", pointerEvents: "none" });
+      waEnabledInput.prop('disabled', true);
+      waNumberInput.prop('disabled', true);
+      waTemplateInput.prop('disabled', true);
+    } else {
+      waGroup.css({ opacity: "1", pointerEvents: "auto" });
+      waEnabledInput.prop('disabled', false);
+      
+      // Restore state of other inputs based on whatsapp_enabled state
+      var waChecked = waEnabledInput.is(':checked');
+      waNumberInput.prop('disabled', !waChecked);
+      waTemplateInput.prop('disabled', !waChecked);
+      
+      // Update opacity on specific rows if whatsapp_enabled is not checked
+      var row = $("#ainbae-bacs-wa-number-row");
+      var tplRow = $("#ainbae-bacs-wa-template-row");
+      if (waChecked) {
+        row.css({ opacity: "1", pointerEvents: "auto" });
+        tplRow.css({ opacity: "1", pointerEvents: "auto" });
+      } else {
+        row.css({ opacity: ".4", pointerEvents: "none" });
+        tplRow.css({ opacity: ".4", pointerEvents: "none" });
+      }
     }
     schedulePreview();
   });
+
 
   // Border radius slider
   $("#ainbae_bacs_br_range").on("input", function () {
     $("#card_border_radius").val(this.value);
     schedulePreview();
   });
+
   $("#card_border_radius").on("input", function () {
     $("#ainbae_bacs_br_range").val(this.value);
     schedulePreview();
@@ -37,8 +87,47 @@ jQuery(document).ready(function ($) {
   // Label fields
   $('[name^="label_"]').on("input", schedulePreview);
 
+  // -------------------------
+  // Tabs Functionality
+  // -------------------------
+  var tabs = document.querySelectorAll(".ainbae-bacs-tab");
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function (e) {
+      e.preventDefault();
+      var panelId = tab.getAttribute("aria-controls");
+
+      // Deactivate all tabs
+      tabs.forEach(function (t) {
+        t.classList.remove("ainbae-bacs-tab-active");
+        t.setAttribute("aria-selected", "false");
+      });
+
+      // Hide all panels
+      document
+        .querySelectorAll(".ainbae-bacs-tab-content")
+        .forEach(function (panel) {
+          panel.classList.remove("ainbae-bacs-tab-content-active");
+        });
+
+      // Activate clicked tab
+      tab.classList.add("ainbae-bacs-tab-active");
+      tab.setAttribute("aria-selected", "true");
+
+      // Show matching panel
+      var panel = document.getElementById(panelId);
+
+      if (panel) {
+        panel.classList.add("ainbae-bacs-tab-content-active");
+      }
+    });
+  });
+
+  // -------------------------
   // Preview Logic
+  // -------------------------
   var previewTimer;
+
   function schedulePreview() {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(buildPreview, 80);
@@ -46,8 +135,14 @@ jQuery(document).ready(function ($) {
 
   function g(name) {
     var el = document.querySelector('[name="' + name + '"]');
+
     if (!el) return "";
-    return el.type === "checkbox" ? (el.checked ? "1" : "0") : el.value;
+
+    return el.type === "checkbox"
+      ? el.checked
+        ? "1"
+        : "0"
+      : el.value;
   }
 
   function h(s) {
@@ -59,10 +154,14 @@ jQuery(document).ready(function ($) {
   }
 
   function buildPreview() {
-    var container = document.getElementById("ainbae-bacs-preview-container");
+    var container = document.getElementById(
+      "ainbae-bacs-preview-container"
+    );
+
     if (!container) return;
 
-    var wa = g("whatsapp_enabled") === "1";
+    var requireReceipt = g("require_receipt_before_order") === "1";
+    var wa = !requireReceipt && g("whatsapp_enabled") === "1";
     var rawBr = g("card_border_radius");
     var br = (parseInt(rawBr, 10) || 0) + "px";
 
@@ -138,5 +237,6 @@ jQuery(document).ready(function ($) {
     container.innerHTML = html;
   }
 
+  // Initial Preview
   setTimeout(buildPreview, 300);
 });

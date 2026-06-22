@@ -3,27 +3,61 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.ainbae-bacs-page-header {
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
+/* =================================  HERO ================================= */
+.ainbae-bacs-header {
+    background: white;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
 }
-.ainbae-bacs-page-header img {
-  height: 60px;
-  width: auto;
-  object-fit: contain;
+
+.ainbae-bacs-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
 }
-.ainbae-bacs-page-header p {
-  margin: 0;
-  color: #666;
-  font-size: 13px;
+
+@media (max-width: 768px) {
+    .ainbae-bacs-header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+.ainbae-bacs-header-content h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1.25;
+    color: #1e293b;
+    margin-top: 10px;
+    margin-bottom: -15px;
+}
+
+.ainbae-bacs-header-content p {
+    color: #64748b;
+    font-size: 1.125rem;
+}
+
+.ainbae-bacs-header-content .ainbae-bacs-logo {
+    max-width: 300px;
+    height: auto;
+    margin-bottom: -20px;
+}
+
+.ainbae-bacs-illustration-container {
+    max-width: 500px;
+    height: auto;
+}
+
+.ainbae-bacs-illustration-container .ainbae-bacs-illustration {
+    width: 100%;
+    height: auto;
 }
 
 .ainbae-bacs-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
-  max-width: 1100px;
   align-items: start;
 }
 .ainbae-bacs-col {
@@ -64,7 +98,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #999;
+  color: #1e293b;
   margin: 0 0 8px;
 }
 
@@ -82,17 +116,18 @@
   gap: 12px;
 }
 
+/* ========== Heading Labels & Descriptions ========== */ */
+
 .ainbae-bacs-label {
   display: block;
-  font-weight: 600;
-  font-size: 13px;
-  color: #1a1a1a;
-  margin-bottom: 3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
 }
 .ainbae-bacs-desc {
   margin: 0 0 6px;
-  color: #999;
-  font-size: 12px;
+  font-size: 0.875rem;
+  color: #64748b;
   line-height: 1.4;
 }
 
@@ -107,10 +142,11 @@
   transition: border-color 0.15s;
 }
 .ainbae-bacs-input:focus {
-  outline: none;
-  border-color: #0aa7ff;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  outline: none !important;
+  border-color: #0aa7ff !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12) !important;
 }
+
 .ainbae-bacs-input-prefix {
   position: relative;
 }
@@ -124,6 +160,25 @@
 }
 .ainbae-bacs-input-prefix input {
   padding-left: 18px;
+}
+
+/* =================================  TITLE ================================= */
+.ainbae-bacs-settings-title {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding-inline: 2rem;
+}
+
+.ainbae-bacs-settings-title h1 {
+    font-size: 1.875rem;
+    font-weight: bold;
+    color: #1e293b;
+    margin-bottom: -15px;
+}
+
+.ainbae-bacs-settings-title p {
+    color: #64748b;
+    font-size: 1.125rem;
 }
 
 /* Layout rules for the color row */
@@ -140,6 +195,171 @@
 .ainbae-bacs-colour-label {
   font-size: 13px;
   color: #374151;
+}
+
+
+/* =================================  SETTINGS ================================= */
+.ainbae-bacs-settings {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .ainbae-bacs-settings {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.ainbae-bacs-settings-container {
+    margin-top: 1rem;
+    padding: 12px 16px;
+}
+
+@media (min-width: 768px) {
+    .ainbae-bacs-settings-container {
+        padding: 8px 16px;
+    }
+}
+
+
+.ainbae-bacs-tablist {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #475569;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ainbae-bacs-tablist-item {
+    list-style: none;
+}
+
+/* ---------- Tab button ---------- */
+.ainbae-bacs-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+    color: #475569;
+    transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.ainbae-bacs-tab:hover {
+    color: #0066ff;
+}
+
+.ainbae-bacs-tab:focus {
+    outline: none;
+}
+
+.ainbae-bacs-tab:focus-visible {
+    box-shadow: 0 0 0 2px #0aa7ff;
+    /* blue-500 ring */
+    border-radius: 2px;
+}
+
+.ainbae-bacs-tab svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Active tab state */
+.ainbae-bacs-tab.ainbae-bacs-tab-active,
+.ainbae-bacs-tab[aria-selected="true"] {
+    color: #0066ff;
+    border-bottom-color: #0066ff;
+}
+
+/* ---------- Tab panels ---------- */
+.ainbae-bacs-panels {
+    padding: 0 0.75rem;
+}
+
+.ainbae-bacs-tab-content {
+    max-width: 42rem;
+    margin-top: 1rem;
+    display: none;
+}
+
+.ainbae-bacs-tab-content.ainbae-bacs-tab-content-active {
+    display: block;
+}
+
+/* GENERAL TAB CONTENT */
+
+.ainbae-bacs-tab-container{
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-block:1rem;
+}
+
+.ainbae-bacs-tab-general {
+    display:flex;
+    flex-direction: column;
+    gap: 1rem;    
+}
+
+.ainbae-bacs-tab-general-heading{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background:#f5fbff;
+  padding: 16px;
+}
+
+.ainbae-bacs-tab-general-heading svg {
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+}
+
+.ainbae-bacs-tab-general-heading h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.ainbae-bacs-tab-general-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ainbae-bacs-headingLabelGroup {
+  display: flex;
+  flex-direction: column;
+}
+.ainbae-bacs-headingLabelGroup .ainbae-bacs-label {
+  margin-bottom: 4px;
+}
+
+.ainbae-bacs-support-variable {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ainbae-bacs-support-variable span{
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 /* Fixing Native WP Color Picker (Iris) */
@@ -209,7 +429,6 @@
   bottom: 0;
   z-index: 100;
   margin-top: 24px;
-  max-width: 1100px;
   padding: 14px 20px;
   background: #fff;
   border-top: 1px solid #e5e7eb;
@@ -243,4 +462,64 @@
 /* Full-width card below the two-column grid (v2.0.0) */
 .ainbae-bacs-card[style*="margin-top:24px"] {
   max-width: 1100px;
+}
+
+/* =================================  WARNING BANNER ================================= */
+.ainbae-bacs-warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 1.5rem 0;
+  box-sizing: border-box;
+}
+
+.ainbae-bacs-warning-icon {
+  color: #d97706;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.ainbae-bacs-warning-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ainbae-bacs-warning-content strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #78350f;
+}
+
+.ainbae-bacs-warning-content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #92400e;
+}
+
+.ainbae-bacs-warning-content a {
+  color: #b45309;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.15s ease-in-out;
+}
+
+.ainbae-bacs-warning-content a:hover {
+  color: #78350f;
+}
+
+
+/* ========= Live Preview Tab Styling Adjustments (v2.1.0) ========= */
+.ainbae-bacs-preview-card {
+  position:sticky;
+  top: 60px;
+  margin-bottom: 1rem;
 }
